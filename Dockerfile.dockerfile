@@ -12,10 +12,10 @@ COPY . .
 RUN npm install
 
 # Set environment variable
-ENV PORT=8080
+ENV PORT=8000
 
 # Indicate that containers based on this image will listen to the specified port
 EXPOSE ${PORT}
 
 # Set default command to be run when creating a container from this image
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
