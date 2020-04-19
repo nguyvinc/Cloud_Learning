@@ -1,0 +1,37 @@
+[
+    {
+        "star": 4,
+        "dollar_sign": 3,
+        "description": "No",
+        "business_id": 1,
+        "user_id": 1
+    },
+    {
+        "star": 2,
+        "dollar_sign": 4,
+        "description": "No",
+        "business_id": 1,
+        "user_id": 2
+    },
+    {
+        "star": 3,
+        "dollar_sign": 2,
+        "description": "No",
+        "business_id": 4,
+        "user_id": 3
+    },
+    {
+        "star": 5,
+        "dollar_sign": 2,
+        "description": "No",
+        "business_id": 2,
+        "user_id": 2
+    },
+    {
+        "star": 3,
+        "dollar_sign": 1,
+        "description": "No",
+        "business_id": 3,
+        "user_id": 1
+    }
+]

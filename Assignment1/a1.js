@@ -34,7 +34,7 @@ app.listen(port, function(){
  * -Upload Business Image
  * -Delete Business Photo
  * -Modify Business Photo Caption
- * -List Owned Businesses
+ * X-List Owned Businesses
  * -List All Written Reviews
  * -List All Uploaded Photos
  * 
@@ -44,28 +44,28 @@ app.listen(port, function(){
 app.get("/businesses", function(req, res, next){
     console.log("== List Business Request", req.query);
     let page = 1;
-    let total_page = Math.floor(businessList.length / 10) + 1;  //Calculate total pages
+    let totalPage = Math.floor(businessList.length / 10) + 1;  //Calculate total pages
     if(businessList.length % 10 === 0){ //If number of businesses divisible by 10, total pages reduced by 1
-        total_page -= 1;
+        totalPage -= 1;
     }
     if(req.query.page){         //If a page is specfied
         page = req.query.page;  //Set the page to grab
-        if(page > total_page || page < 0){  //If the page doesn't exist
+        if(page > totalPage || page < 0){  //If the page doesn't exist
             next();             //Go to 404 not found
         }
     }
     let nextPage = page + 1;    //Get the next page
     let prevPage = page - 1;    //Get the previous page
-    if(nextPage > total_page){  //If the next page is greater than the total pages, grab page 1
+    if(nextPage > totalPage){  //If the next page is greater than the total pages, grab page 1
         nextPage = 1;
     }
     if(prevPage === 0){         //If the previous page is 0, grab the last page
-        prevPage = total_page;
+        prevPage = totalPage;
     }
 
     res.status(200).send({      //Send the data
         "page_number": page,
-        "total_pages": total_page,
+        "total_pages": totalPage,
         "page_size": 10,
         "total_count": businessList.length,
         "businesses": businessList,
@@ -80,18 +80,18 @@ app.get("/businesses", function(req, res, next){
 app.post("/businesses", function(req, res, next){
     console.log("== Add Business Request", req.body);
     //Check for required fields
-    if(req.body.name && req.body.address && req.body.city && req.body.state && req.body.zip && req.body.phone && req.body.category && req.body.subcategories){
-        let new_business = req.body;    //Grab the business info
-        new_business.id = 1;            //Generate new business id
+    if(req.body.name && req.body.address && req.body.city && req.body.state && req.body.zip && req.body.phone && req.body.category && req.body.subcategories && req.body.owner_id){
+        let newBusiness = req.body;    //Grab the business info
+        newBusiness.business_id = 1;            //Generate new business id
         businessList.forEach(function(business){    //Search through all businesses
-            if(business.id >= new_business.id){     //Find highest current business id
-                new_business.id = business.id + 1;  //Add 1 to current highest business id
+            if(business.business_id >= newBusiness.business_id){     //Find highest current business id
+                newBusiness.business_id = business.business_id + 1;  //Add 1 to current highest business id
             }
         });
-        businessList.push(new_business);//Add business to the list
+        businessList.push(newBusiness);//Add business to the list
         res.status(201).send({
             "msg": "Business successfully added.",
-            "new_business": new_business
+            "newBusiness": newBusiness
         });
     }
     else{   //If any required fields are empty, send error
@@ -102,11 +102,11 @@ app.post("/businesses", function(req, res, next){
 });
 
 // Get Single Business
-app.get("/businesses/:id", function(req, res, next){
+app.get("/businesses/:bId", function(req, res, next){
     console.log("== Single Business Request", req.params);
-    let reqId = req.params.id;  //Get requested id
+    let reqId = req.params.bId;  //Get requested id
     let found = false;
-    businessList.forEach(function(data){//Search through all businesses
+    businessList.forEach((data) => {//Search through all businesses
         if(data.id == reqId){   //If business id matches requested id
             found = true;
             res.status(200).send(data); //Send business's data
@@ -118,11 +118,11 @@ app.get("/businesses/:id", function(req, res, next){
 });
 
 // Modify Business
-app.put("/businesses/:id", function(req, res, next){
+app.put("/businesses/:bId", function(req, res, next){
     console.log("== Modify Business Request", req.body);
     //Check for required fields
     if(req.body && req.body.name && req.body.address && req.body.city && req.body.state && req.body.zip && req.body.phone && req.body.category && req.body.subcategories){
-        const reqId = req.params.id;    //Get requested id
+        const reqId = req.params.bId;    //Get requested id
         let found = false;
         for(let i=0; i<businessList.length; i++){   //Search through all businesses
             if(businessList[i].id == reqId){//If business id matches requested id
@@ -148,9 +148,9 @@ app.put("/businesses/:id", function(req, res, next){
 });
 
 // Delete Business
-app.delete("/businesses/:id", function(req, res, next){
+app.delete("/businesses/:bId", function(req, res, next){
     console.log("== Delete Business Request");
-    const reqId = req.params.id;    //Get requested id
+    const reqId = req.params.bId;    //Get requested id
     let found = false;
     for(let i=0; i<businessList.length; i++){   //Search through all businesses
         if(businessList[i].id == reqId){    //If business id matches requested id
@@ -166,6 +166,26 @@ app.delete("/businesses/:id", function(req, res, next){
     if(!found){ //If requested id was not found, go to 404
         next();
     }
+});
+
+// List Owned Businesses
+app.get("/users/:uId/businesses", function(req, res, next){
+    console.log("== List Owned Businesses Request UserID:", req.params.uId);
+    const userId = req.params.uId;
+    let ownedBusinesses = [];
+    businessList.forEach((data) => {
+        if(data.owner_id == userId){
+            ownedBusinesses.push(data);
+        }
+    });
+    res.status(200).send(ownedBusinesses);
+});
+
+// List All Written Reviews
+app.get("/users/:uId/reviews", function(req, res, next){
+    console.log("== List All Written Reviews UserID:", req.params.uId);
+    const userId = req.params.uId;
+    let reviews = [];
 });
 
 app.use("*", function(req, res, next){

@@ -1,6 +1,5 @@
 [
     {
-        "id": 1,
         "name": "Business 1",
         "address": "Yes St.",
         "city": "Portland",
@@ -8,12 +7,13 @@
         "zip": 97230,
         "phone": 5034445555,
         "category": "Restaurant",
-        "subcategories": "Pizza",
+        "subcategories": ["Pizza"],
         "website": "",
-        "email": ""
+        "email": "",
+        "owner_id": 1,
+        "business_id": 1
     },
     {
-        "id": 2,
         "name": "Business 2",
         "address": "No St.",
         "city": "Corvallis",
@@ -21,12 +21,13 @@
         "zip": 97330,
         "phone": 5415556666,
         "category": "Restaurant",
-        "subcategories": "Burger",
+        "subcategories": ["Burger"],
         "website": "",
-        "email": ""
+        "email": "",
+        "owner_id": 2,
+        "business_id": 2
     },
     {
-        "id": 3,
         "name": "Business 3",
         "address": "Maybe St.",
         "city": "Eugene",
@@ -34,21 +35,24 @@
         "zip": 97430,
         "phone": 5036667777,
         "category": "Store",
-        "subcategories": "Grocery",
+        "subcategories": ["Grocery"],
         "website": "",
-        "email": ""
+        "email": "",
+        "owner_id": 3,
+        "business_id": 3
     },
     {
-        "id": 4,
         "name": "Business 4",
         "address": "No U St.",
         "city": "Lincoln City",
         "state": "OR",
-        "zip": 97230,
+        "zip": 97830,
         "phone": 5037778888,
         "category": "Store",
-        "subcategories": "General",
+        "subcategories": ["General"],
         "website": "",
-        "email": ""
+        "email": "",
+        "owner_id": 4,
+        "business_id": 4
     }
 ]
