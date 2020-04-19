@@ -1,0 +1,54 @@
+[
+    {
+        "id": 1,
+        "name": "Business 1",
+        "address": "Yes St.",
+        "city": "Portland",
+        "state": "OR",
+        "zip": 97230,
+        "phone": 5034445555,
+        "category": "Restaurant",
+        "subcategories": "Pizza",
+        "website": "",
+        "email": ""
+    },
+    {
+        "id": 2,
+        "name": "Business 2",
+        "address": "No St.",
+        "city": "Corvallis",
+        "state": "OR",
+        "zip": 97330,
+        "phone": 5415556666,
+        "category": "Restaurant",
+        "subcategories": "Burger",
+        "website": "",
+        "email": ""
+    },
+    {
+        "id": 3,
+        "name": "Business 3",
+        "address": "Maybe St.",
+        "city": "Eugene",
+        "state": "OR",
+        "zip": 97430,
+        "phone": 5036667777,
+        "category": "Store",
+        "subcategories": "Grocery",
+        "website": "",
+        "email": ""
+    },
+    {
+        "id": 4,
+        "name": "Business 4",
+        "address": "No U St.",
+        "city": "Lincoln City",
+        "state": "OR",
+        "zip": 97230,
+        "phone": 5037778888,
+        "category": "Store",
+        "subcategories": "General",
+        "website": "",
+        "email": ""
+    }
+]
