@@ -7,7 +7,8 @@ app.use(bodyParser.json());
 const port = process.env.PORT || 8000;
 
 const businessList = require("./business-data.json");
-//console.log("== Lodging data: ", lodgingData);
+const reviewList = require("./reviews.json");
+const photoList = require("./photos.json");
 
 app.listen(port, function(){
     console.log("== Server is listening on port ", port);
@@ -28,17 +29,22 @@ app.listen(port, function(){
  * 
  * Users:
  * X-Get Business List
- * X-Get Single Business Info
- * -Submit Business Review
- * -Modify/Delete Business Review
+ * ?-Get Single Business Info
+ * X-Submit Business Review
+ * X-Modify Business Review
+ * X-Delete Business Review
  * -Upload Business Image
  * -Delete Business Photo
  * -Modify Business Photo Caption
  * X-List Owned Businesses
- * -List All Written Reviews
+ * X-List All Written Reviews
  * -List All Uploaded Photos
  * 
 */
+
+//
+//// Businesses
+//
 
 // Get Business List
 app.get("/businesses", function(req, res, next){
@@ -95,7 +101,7 @@ app.post("/businesses", function(req, res, next){
         });
     }
     else{   //If any required fields are empty, send error
-        req.status(400).send({
+        res.status(400).send({
             err: "Request doesn't have the required fields."
         });
     }
@@ -104,12 +110,18 @@ app.post("/businesses", function(req, res, next){
 // Get Single Business
 app.get("/businesses/:bId", function(req, res, next){
     console.log("== Single Business Request", req.params);
-    let reqId = req.params.bId;  //Get requested id
+    const reqId = req.params.bId;  //Get requested id
     let found = false;
-    businessList.forEach((data) => {//Search through all businesses
-        if(data.id == reqId){   //If business id matches requested id
+    businessList.forEach((business) => {//Search through all businesses
+        if(business.business_id == reqId){   //If business id matches requested id
             found = true;
-            res.status(200).send(data); //Send business's data
+            let reviews = reviewList.filter((review) => {
+                return review.business_id == business.business_id;
+            });
+            res.status(200).send({
+                "business_data": business,
+                "reviews": reviews
+            }); //Send business's data
         }
     });
     if(!found){ //If requested id was not found, go to 404
@@ -125,7 +137,7 @@ app.put("/businesses/:bId", function(req, res, next){
         const reqId = req.params.bId;    //Get requested id
         let found = false;
         for(let i=0; i<businessList.length; i++){   //Search through all businesses
-            if(businessList[i].id == reqId){//If business id matches requested id
+            if(businessList[i].business_id == reqId){//If business id matches requested id
                 businessList[i] = req.body; //Modify the business
                 found = true;
                 res.status(200).send({
@@ -144,7 +156,6 @@ app.put("/businesses/:bId", function(req, res, next){
             err: "Request doesn't have required fields."
         });
     }
-    
 });
 
 // Delete Business
@@ -153,7 +164,7 @@ app.delete("/businesses/:bId", function(req, res, next){
     const reqId = req.params.bId;    //Get requested id
     let found = false;
     for(let i=0; i<businessList.length; i++){   //Search through all businesses
-        if(businessList[i].id == reqId){    //If business id matches requested id
+        if(businessList[i].business_id == reqId){    //If business id matches requested id
             found = true;
             businessList.splice(i, 1);  // Remove the business
             res.status(200).send({
@@ -169,23 +180,130 @@ app.delete("/businesses/:bId", function(req, res, next){
 });
 
 // List Owned Businesses
-app.get("/users/:uId/businesses", function(req, res, next){
+app.get("/businesses/owner/:uId", function(req, res, next){
     console.log("== List Owned Businesses Request UserID:", req.params.uId);
-    const userId = req.params.uId;
-    let ownedBusinesses = [];
-    businessList.forEach((data) => {
-        if(data.owner_id == userId){
-            ownedBusinesses.push(data);
-        }
-    });
-    res.status(200).send(ownedBusinesses);
+    const userId = req.params.uId;  //Get requested userId
+    const ownedBusinesses = businessList.filter(business => business.owner_id == userId);   //Grab all businesses with owner id = requested id
+    res.status(200).send(ownedBusinesses);  //Send owned list
 });
 
+
+//
+//// Business Reviews
+//
+
 // List All Written Reviews
-app.get("/users/:uId/reviews", function(req, res, next){
+app.get("/reviews/user/:uId", function(req, res, next){
     console.log("== List All Written Reviews UserID:", req.params.uId);
-    const userId = req.params.uId;
-    let reviews = [];
+    const userId = req.params.uId;  //Get requested userId
+    const reviews = reviewList.filter(business => business.user_id == userId);  //Grab all reviews with user id = requested user id
+    res.status(200).send(reviews);  //Send written review list
+});
+
+// Submit Business Review
+app.post("/reviews", function(req, res, next){
+    console.log("== Submit Business Review Request", req.body);
+    if(req.body && req.body.star && req.body.dollar_sign && req.body.description && req.body.business_id && req.body.user_id){
+        let newReview = req.body;
+        if(businessList.find((business) => {
+            return business.business_id == newReview.business_id;
+        })){
+            //Check if user has already reviewed selected business
+            if(reviewList.find((review) => {
+                return ((review.business_id == newReview.business_id && review.user_id == newReview.user_id));
+            })){
+                //If a review was found
+                res.status(400).send({
+                    "err": "User has already reviewed selected business."
+                });
+            }
+            else{   //If a review was not found
+                newReview.review_id = 1;
+                reviewList.forEach((review) => {
+                    if(review.review_id >= newReview.review_id){
+                        newReview.review_id = review.review_id + 1;
+                    }
+                });
+                reviewList.push(newReview);
+                res.status(201).send({
+                    "msg": "Review successfully added.",
+                    "newReview": newReview
+                });
+            }
+        }
+        else{
+            res.status(404).send({
+                "err": "Reviewed business not found."
+            });
+        }
+    }
+    else{
+        res.status(400).send({
+            err: "Request doesn't have required fields."
+        });
+    }
+});
+
+// Modify Business Review
+app.put("/reviews/:rId", function(req, res, next){
+    console.log("== Modify Business Review Request", req.body);
+    //Check for required fields
+    if(req.body && req.body.star && req.body.dollar_sign && req.body.description && req.body.business_id && req.body.user_id){
+        const reqId = req.params.rId;    //Get requested id
+        let found = false;
+        for(let i=0; i<reviewList.length; i++){     //Search through all reviews
+            if(reviewList[i].review_id == reqId){   //If review id matches requested id
+                reviewList[i] = req.body; //Modify the review
+                found = true;
+                res.status(200).send({
+                    msg: "Review modified.",
+                    input: businessList[i]
+                });
+                break;
+            }
+        }
+        if(!found){ //If requested id was not found, go to 404
+            next();
+        }
+    }
+    else{   //If any required fields are empty, send error
+        res.status(400).send({
+            err: "Request doesn't have required fields."
+        });
+    }
+});
+
+// Delete Business Review
+app.delete("/reviews/:rId", function(req, res, next){
+    console.log("== Delete Business Review Request");
+    const reqId = req.params.rId;    //Get requested id
+    let found = false;
+    for(let i=0; i<reviewList.length; i++){   //Search through all reviews
+        if(reviewList[i].review_id == reqId){    //If business id matches requested id
+            found = true;
+            reviewList.splice(i, 1);  // Remove the business
+            res.status(200).send({
+                msg: "Review deleted.",
+                id: reqId
+            });
+            break;
+        }
+    }
+    if(!found){ //If requested id was not found, go to 404
+        next();
+    }
+});
+
+//
+//// Business Photos
+//
+
+// List All Uploaded Photos
+app.get("/photos/:uId", function(req, res, next){
+    console.log("== List All Uploaded Photos UserID:", req.params.uId);
+    const userId = req.params.uId;  //Get requested userId
+    const photos = photoList.filter(photo => photo.user_id == userId);  //Grab all reviews with user id = requested user id
+    res.status(200).send(photos);  //Send written review list
 });
 
 app.use("*", function(req, res, next){
