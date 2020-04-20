@@ -69,7 +69,7 @@ app.get("/businesses", function(req, res, next){
     console.log("== List Business Request", req.query);
     const pageSize = 10;
     //totalPage, page, error, nextPage, prevPage
-    let result = pagination(req.query.page, pageSize, businessList);
+    const result = pagination(req.query.page, pageSize, businessList);
 
     if(result[2] == 0){
         let businessLinks = [];
@@ -133,18 +133,27 @@ app.get("/businesses/:bId", function(req, res, next){
     businessList.forEach((business) => {//Search through all businesses
         if(business.businessId == reqId){   //If business id matches requested id
             found = true;
-            let reviews = reviewList.filter((review) => {
+            const reviews = reviewList.filter((review) => {
                 return review.businessId == business.businessId;
             });
-            let photos = photoList.filter((photo) => {
+            const photos = photoList.filter((photo) => {
                 return photo.businessId == business.businessId;
             });
-            let reviewerList = reviews.map(review => "/reviews/user/"+review.userId);
+            const reviewerList = reviews.map(review => "/reviews/user/"+review.userId);
+            let usedIds = [];
+            let uploaderList = [];
+            photoList.forEach((photo) => {
+                if(usedIds.indexOf(photo.userId) === -1){
+                    usedIds.push(photo.userId);
+                    uploaderList.push("/photos/"+photo.userId);
+                }
+            });
             res.status(200).send({
                 "businessData": business,
                 "reviews": reviews,
                 "reviewers": reviewerList,
-                "photos": photos
+                "photos": photos,
+                "photoUploaders": uploaderList
             }); //Send business's data
         }
     });
@@ -212,7 +221,7 @@ app.get("/businesses/owner/:uId", function(req, res, next){
     //Grab all businesses with owner id = requested id
     const ownedBusinesses = businessList.filter(business => business.ownerId == userId);
     const pageSize = 10;
-    let result = pagination(req.query.page, pageSize, ownedBusinesses);
+    const result = pagination(req.query.page, pageSize, ownedBusinesses);
     if(result[2] == 0){
         let businessLinks = [];
         ownedBusinesses.forEach((business) => { //HATEOAS for all owned businesses
@@ -248,7 +257,7 @@ app.get("/reviews/user/:uId", function(req, res, next){
     const reviews = reviewList.filter(business => business.userId == userId);  //Grab all reviews with user id = requested user id
     const pageSize = 10;
     //totalPage, page, error, nextPage, prevPage
-    let result = pagination(req.query.page, pageSize, reviews);
+    const result = pagination(req.query.page, pageSize, reviews);
     if(result[2] == 0){
         const reviewLinks = reviews.map(review => "/businesses/"+review.businessId);
 
@@ -377,7 +386,7 @@ app.get("/photos/:uId", function(req, res, next){
     const photos = photoList.filter(photo => photo.userId == userId);  //Grab all reviews with user id = requested user id
 
     const pageSize = 10;
-    let result = pagination(req.query.page, pageSize, photos);
+    const result = pagination(req.query.page, pageSize, photos);
     if(result[2] == 0){
         let businessLinks = [];
         let usedIds = [];
