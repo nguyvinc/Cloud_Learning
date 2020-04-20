@@ -11,7 +11,8 @@
     "nodemon": "^2.0.3"
   },
   "scripts": {
-    "start": "nodemon a1.js"
+    "start": "node a1.js",
+	  "dev": "nodemon a1.js"
   },
   "author": "",
   "license": "ISC"
