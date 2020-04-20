@@ -78,7 +78,7 @@ app.get("/businesses", function(req, res, next){
 
     if(result[2] == 0){
         let businessLinks = [];
-        for(let i=((result[1]-1)*pageSize); i<result[1]*pageSize; i++){
+        for(let i=((result[1]-1)*pageSize); i<result[1]*pageSize; i++){ //HATEOAS for business list
             if(i < businessList.length){
                 businessLinks.push("/businesses/"+businessList[i].business_id);
             }
@@ -214,36 +214,29 @@ app.get("/businesses/owner/:uId", function(req, res, next){
     const userId = req.params.uId;  //Get requested userId
     //Grab all businesses with owner id = requested id
     const ownedBusinesses = businessList.filter(business => business.owner_id == userId);
-
-    let page = 1;
     const pageSize = 10;
-    let totalPage = Math.floor(ownedBusinesses.length / pageSize) + 1;  //Calculate total pages
-    if(ownedBusinesses.length % pageSize === 0){ //If number of owned businesses divisible by page size, total pages reduced by 1
-        totalPage -= 1;
+    let result = pagination(req.query.page, pageSize, ownedBusinesses);
+    if(result[2] == 0){
+        let businessLinks = [];
+        ownedBusinesses.forEach((business) => { //HATEOAS for all owned businesses
+            businessLinks.push("/businesses/"+business.business_id);
+        });
+        res.status(200).send({
+            "page_number": parseInt(result[1]),
+            "total_pages": parseInt(result[0]),
+            "page_size": pageSize,
+            "total_count": ownedBusinesses.length,
+            "businesses": ownedBusinesses,
+            "business_links": businessLinks,
+            "links": {
+                "nextPage": "/businesses/owner/"+req.params.uId+"?page="+result[3],
+                "prevPage": "/businesses/owner/"+req.params.uId+"?page="+result[4]
+            }
+        });
     }
-    if(req.query.page){         //If a page is specfied
-        page = req.query.page;  //Set the page to grab
-        if(page > totalPage || page < 0){  //If the page doesn't exist
-            next();             //Go to 404 not found
-        }
+    else{
+        next();
     }
-    let nextPage = page + 1;    //Get the next page
-    let prevPage = page - 1;    //Get the previous page
-    if(nextPage > totalPage){  //If the next page is greater than the total pages, grab page 1
-        nextPage = 1;
-    }
-    if(prevPage === 0){         //If the previous page is 0, grab the last page
-        prevPage = totalPage;
-    }
-
-    let businessLinks = [];
-    ownedBusinesses.forEach((business) => { //HATEOAS for all owned businesses
-        businessLinks.push("/businesses/"+business.business_id);
-    });
-    res.status(200).send({
-        "businesses": ownedBusinesses,
-        "business_links": businessLinks
-    });
 });
 
 
