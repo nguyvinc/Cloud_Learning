@@ -10,8 +10,8 @@
         "subcategories": ["Pizza"],
         "website": "",
         "email": "",
-        "owner_id": 1,
-        "business_id": 1
+        "ownerId": 1,
+        "businessId": 1
     },
     {
         "name": "Business 2",
@@ -24,8 +24,8 @@
         "subcategories": ["Burger"],
         "website": "",
         "email": "",
-        "owner_id": 2,
-        "business_id": 2
+        "ownerId": 2,
+        "businessId": 2
     },
     {
         "name": "Business 3",
@@ -38,8 +38,8 @@
         "subcategories": ["Grocery"],
         "website": "",
         "email": "",
-        "owner_id": 3,
-        "business_id": 3
+        "ownerId": 3,
+        "businessId": 3
     },
     {
         "name": "Business 4",
@@ -52,7 +52,7 @@
         "subcategories": ["General"],
         "website": "",
         "email": "",
-        "owner_id": 1,
-        "business_id": 4
+        "ownerId": 1,
+        "businessId": 4
     }
 ]

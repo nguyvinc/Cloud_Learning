@@ -15,12 +15,7 @@ app.listen(port, function(){
 });
 
 /*
- *  Middleware Functions
-*/
-
-
-/* 
- * Middleware Functions Needed:
+ * Middleware Functions:
  * 
  * Business Owners:
  * X-Add Business
@@ -80,7 +75,7 @@ app.get("/businesses", function(req, res, next){
         let businessLinks = [];
         for(let i=((result[1]-1)*pageSize); i<result[1]*pageSize; i++){ //HATEOAS for business list
             if(i < businessList.length){
-                businessLinks.push("/businesses/"+businessList[i].business_id);
+                businessLinks.push("/businesses/"+businessList[i].businessId);
             }
             else{
                 break;
@@ -88,13 +83,13 @@ app.get("/businesses", function(req, res, next){
         }
 
         res.status(200).send({      //Send the data
-            "page_number": parseInt(result[1]),
-            "total_pages": parseInt(result[0]),
-            "page_size": pageSize,
-            "total_count": businessList.length,
+            "pageNumber": parseInt(result[1]),
+            "totalPages": parseInt(result[0]),
+            "pageSize": pageSize,
+            "totalCount": businessList.length,
             "businesses": businessList,
-            "business_links": businessLinks,
-            "links": {
+            "businessLinks": businessLinks,
+            "pageLinks": {
                 "nextPage": "/businesses?page="+result[3],
                 "prevPage": "/businesses?page="+result[4]
             }
@@ -109,12 +104,12 @@ app.get("/businesses", function(req, res, next){
 app.post("/businesses", function(req, res, next){
     console.log("== Add Business Request", req.body);
     //Check for required fields
-    if(req.body.name && req.body.address && req.body.city && req.body.state && req.body.zip && req.body.phone && req.body.category && req.body.subcategories && req.body.owner_id){
+    if(req.body.name && req.body.address && req.body.city && req.body.state && req.body.zip && req.body.phone && req.body.category && req.body.subcategories && req.body.ownerId){
         let newBusiness = req.body;    //Grab the business info
-        newBusiness.business_id = 1;            //Generate new business id
+        newBusiness.businessId = 1;            //Generate new business id
         businessList.forEach(function(business){    //Search through all businesses
-            if(business.business_id >= newBusiness.business_id){     //Find highest current business id
-                newBusiness.business_id = business.business_id + 1;  //Add 1 to current highest business id
+            if(business.businessId >= newBusiness.businessId){     //Find highest current business id
+                newBusiness.businessId = business.businessId + 1;  //Add 1 to current highest business id
             }
         });
         businessList.push(newBusiness);//Add business to the list
@@ -136,16 +131,16 @@ app.get("/businesses/:bId", function(req, res, next){
     const reqId = req.params.bId;  //Get requested id
     let found = false;
     businessList.forEach((business) => {//Search through all businesses
-        if(business.business_id == reqId){   //If business id matches requested id
+        if(business.businessId == reqId){   //If business id matches requested id
             found = true;
             let reviews = reviewList.filter((review) => {
-                return review.business_id == business.business_id;
+                return review.businessId == business.businessId;
             });
             let photos = photoList.filter((photo) => {
-                return photo.business_id == business.business_id;
+                return photo.businessId == business.businessId;
             });
             res.status(200).send({
-                "business_data": business,
+                "businessData": business,
                 "reviews": reviews,
                 "photos": photos
             }); //Send business's data
@@ -164,14 +159,14 @@ app.put("/businesses/:bId", function(req, res, next){
         const reqId = req.params.bId;    //Get requested id
         let found = false;
         for(let i=0; i<businessList.length; i++){       //Search through all businesses
-            if(businessList[i].business_id == reqId){   //If business id matches requested id
-                req.body.owner_id = businessList[i].owner_id;
-                req.body.business_id = businessList[i].business_id;
+            if(businessList[i].businessId == reqId){   //If business id matches requested id
+                req.body.ownerId = businessList[i].ownerId;
+                req.body.businessId = businessList[i].businessId;
                 businessList[i] = req.body; //Modify the business
                 found = true;
                 res.status(200).send({
-                    msg: "Business modified.",
-                    input: req.body
+                    "msg": "Business modified.",
+                    "input": req.body
                 });
                 break;
             }
@@ -193,12 +188,12 @@ app.delete("/businesses/:bId", function(req, res, next){
     const reqId = req.params.bId;    //Get requested id
     let found = false;
     for(let i=0; i<businessList.length; i++){   //Search through all businesses
-        if(businessList[i].business_id == reqId){    //If business id matches requested id
+        if(businessList[i].businessId == reqId){    //If business id matches requested id
             found = true;
             businessList.splice(i, 1);  // Remove the business
             res.status(200).send({
-                msg: "Business deleted.",
-                id: reqId
+                "msg": "Business deleted.",
+                "id": reqId
             });
             break;
         }
@@ -213,22 +208,22 @@ app.get("/businesses/owner/:uId", function(req, res, next){
     console.log("== List Owned Businesses Request UserID:", req.params.uId);
     const userId = req.params.uId;  //Get requested userId
     //Grab all businesses with owner id = requested id
-    const ownedBusinesses = businessList.filter(business => business.owner_id == userId);
+    const ownedBusinesses = businessList.filter(business => business.ownerId == userId);
     const pageSize = 10;
     let result = pagination(req.query.page, pageSize, ownedBusinesses);
     if(result[2] == 0){
         let businessLinks = [];
         ownedBusinesses.forEach((business) => { //HATEOAS for all owned businesses
-            businessLinks.push("/businesses/"+business.business_id);
+            businessLinks.push("/businesses/"+business.businessId);
         });
         res.status(200).send({
-            "page_number": parseInt(result[1]),
-            "total_pages": parseInt(result[0]),
-            "page_size": pageSize,
-            "total_count": ownedBusinesses.length,
+            "pageNumber": parseInt(result[1]),
+            "totalPages": parseInt(result[0]),
+            "pageSize": pageSize,
+            "totalCount": ownedBusinesses.length,
             "businesses": ownedBusinesses,
-            "business_links": businessLinks,
-            "links": {
+            "businessLinks": businessLinks,
+            "pageLinks": {
                 "nextPage": "/businesses/owner/"+req.params.uId+"?page="+result[3],
                 "prevPage": "/businesses/owner/"+req.params.uId+"?page="+result[4]
             }
@@ -248,21 +243,21 @@ app.get("/businesses/owner/:uId", function(req, res, next){
 app.get("/reviews/user/:uId", function(req, res, next){
     console.log("== List All Written Reviews UserID:", req.params.uId);
     const userId = req.params.uId;  //Get requested userId
-    const reviews = reviewList.filter(business => business.user_id == userId);  //Grab all reviews with user id = requested user id
+    const reviews = reviewList.filter(business => business.userId == userId);  //Grab all reviews with user id = requested user id
     res.status(200).send(reviews);  //Send written review list
 });
 
 // Submit Business Review
 app.post("/reviews", function(req, res, next){
     console.log("== Submit Business Review Request", req.body);
-    if(req.body && req.body.star && req.body.dollar_sign && req.body.description && req.body.business_id && req.body.user_id){
+    if(req.body && req.body.star && req.body.dollarSign && req.body.description && req.body.businessId && req.body.userId){
         let newReview = req.body;
         if(businessList.find((business) => {
-            return business.business_id == newReview.business_id;
+            return business.businessId == newReview.businessId;
         })){
             //Check if user has already reviewed selected business
             if(reviewList.find((review) => {
-                return ((review.business_id == newReview.business_id && review.user_id == newReview.user_id));
+                return ((review.businessId == newReview.businessId && review.userId == newReview.userId));
             })){
                 //If a review was found
                 res.status(400).send({
@@ -270,10 +265,10 @@ app.post("/reviews", function(req, res, next){
                 });
             }
             else{   //If a review was not found
-                newReview.review_id = 1;
+                newReview.reviewId = 1;
                 reviewList.forEach((review) => {
-                    if(review.review_id >= newReview.review_id){
-                        newReview.review_id = review.review_id + 1;
+                    if(review.reviewId >= newReview.reviewId){
+                        newReview.reviewId = review.reviewId + 1;
                     }
                 });
                 reviewList.push(newReview);
@@ -300,13 +295,13 @@ app.post("/reviews", function(req, res, next){
 app.put("/reviews/:rId", function(req, res, next){
     console.log("== Modify Business Review Request", req.body);
     //Check for required fields
-    if(req.body && req.body.star && req.body.dollar_sign && req.body.description){
+    if(req.body && req.body.star && req.body.dollarSign && req.body.description){
         const reqId = req.params.rId;    //Get requested id
         let found = false;
         for(let i=0; i<reviewList.length; i++){     //Search through all reviews
-            if(reviewList[i].review_id == reqId){   //If review id matches requested id
+            if(reviewList[i].reviewId == reqId){   //If review id matches requested id
                 reviewList[i].star = req.body.star; //Modify the review
-                reviewList[i].dollar_sign = req.body.dollar_sign;
+                reviewList[i].dollarSign = req.body.dollarSign;
                 reviewList[i].description = req.body.description;
                 found = true;
                 res.status(200).send({
@@ -333,7 +328,7 @@ app.delete("/reviews/:rId", function(req, res, next){
     const reqId = req.params.rId;    //Get requested id
     let found = false;
     for(let i=0; i<reviewList.length; i++){     //Search through all reviews
-        if(reviewList[i].review_id == reqId){   //If review id matches requested id
+        if(reviewList[i].reviewId == reqId){   //If review id matches requested id
             found = true;
             reviewList.splice(i, 1);  // Remove the business
             res.status(200).send({
@@ -356,19 +351,19 @@ app.delete("/reviews/:rId", function(req, res, next){
 app.get("/photos/:uId", function(req, res, next){
     console.log("== List All Uploaded Photos UserID:", req.params.uId);
     const userId = req.params.uId;  //Get requested userId
-    const photos = photoList.filter(photo => photo.user_id == userId);  //Grab all reviews with user id = requested user id
+    const photos = photoList.filter(photo => photo.userId == userId);  //Grab all reviews with user id = requested user id
     res.status(200).send(photos);  //Send written review list
 });
 
 // Add Business Image
 app.post("/photos", function(req, res, next){
     console.log("== Add Photo Request", req.body);
-    if(req.body && req.body.url && req.body.caption && req.body.business_id && req.body.user_id){
+    if(req.body && req.body.url && req.body.caption && req.body.businessId && req.body.userId){
         let newPhoto = req.body;    //Grab the photo info
-        newPhoto.photo_id = 1;            //Generate new photo id
+        newPhoto.photoId = 1;            //Generate new photo id
         photoList.forEach(function(photo){    //Search through all photos
-            if(photo.photo_id >= newPhoto.photo_id){     //Find highest current photo id
-                newPhoto.photo_id = photo.photo_id + 1;  //Add 1 to current highest photo id
+            if(photo.photoId >= newPhoto.photoId){     //Find highest current photo id
+                newPhoto.photoId = photo.photoId + 1;  //Add 1 to current highest photo id
             }
         });
         photoList.push(newPhoto);//Add business to the list
@@ -391,12 +386,12 @@ app.put("/photos/:pId", function(req, res, next){
         const pId = req.params.pId;
         let found = false;
         for(let i=0; i<photoList.length; i++){
-            if(photoList[i].photo_id == pId){
+            if(photoList[i].photoId == pId){
                 found = true;
                 photoList[i].caption = req.body.caption;
                 res.status(200).send({
                     "msg": "Photo caption modified.",
-                    "caption_input": photoList[i].caption
+                    "captionInput": photoList[i].caption
                 });
             };
         }
@@ -417,7 +412,7 @@ app.delete("/photos/:pId", function(req, res, next){
     const reqId = req.params.pId;    //Get requested id
     let found = false;
     for(let i=0; i<photoList.length; i++){  //Search through all photos
-        if(photoList[i].photo_id == reqId){ //If photo id matches requested id
+        if(photoList[i].photoId == reqId){ //If photo id matches requested id
             found = true;
             photoList.splice(i, 1);  // Remove the photo
             res.status(200).send({

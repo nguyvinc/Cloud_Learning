@@ -3,49 +3,49 @@
         "url": "google.com",
         "caption": "Yes good",
         "business_id": 1,
-        "user_id": 1,
-        "photo_id": 1
+        "userId": 1,
+        "photoId": 1
     },
     {
         "url": "yahoo.com",
         "caption": "Ehh",
         "business_id": 1,
-        "user_id": 1,
-        "photo_id": 2
+        "userId": 1,
+        "photoId": 2
     },
     {
         "url": "bing.com",
         "caption": "I guess",
         "business_id": 1,
-        "user_id": 1,
-        "photo_id": 3
+        "userId": 1,
+        "photoId": 3
     },
     {
         "url": "myspace.com",
         "caption": "okay",
         "business_id": 1,
-        "user_id": 2,
-        "photo_id": 4
+        "userId": 2,
+        "photoId": 4
     },
     {
         "url": "myanimelist.com",
         "caption": "Yes good",
         "business_id": 1,
-        "user_id": 2,
-        "photo_id": 5
+        "userId": 2,
+        "photoId": 5
     },
     {
         "url": "steam.com",
         "caption": "nice",
         "business_id": 2,
-        "user_id": 2,
-        "photo_id": 6
+        "userId": 2,
+        "photoId": 6
     },
     {
         "url": "mangadex.com",
         "caption": "Yes good",
         "business_id": 2,
-        "user_id": 2,
-        "photo_id": 7
+        "userId": 2,
+        "photoId": 7
     }
 ]
