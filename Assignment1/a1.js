@@ -42,6 +42,29 @@ app.listen(port, function(){
  * 
 */
 
+function pagination(page, pageSize, list){
+    let returnArr = [0, 1, 0, 0, 0]; //totalPage, page, error, nextPage, prevPage
+    returnArr[0] = Math.floor(list.length / pageSize) + 1;  //Calculate total pages
+    if(list.length % pageSize === 0){ //If number of elements divisible by page size, total pages reduced by 1
+        returnArr[0] -= 1;
+    }
+    if(page){   //If a page is specfied
+        returnArr[1] = page;    //Set the page to grab
+        if(returnArr[1] > returnArr[0] || returnArr[1] < 0){    //If the page doesn't exist
+            returnArr[2] = 1;   //Set error flag
+        }
+    }
+    returnArr[3] = returnArr[1] + 1;    //Get the next page
+    returnArr[4] = returnArr[1] - 1;    //Get the previous page
+    if(returnArr[3] > returnArr[0]){  //If the next page is greater than the total pages, grab page 1
+        returnArr[3] = 1;
+    }
+    if(returnArr[4] === 0){         //If the previous page is 0, grab the last page
+        returnArr[4] = returnArr[0];
+    }
+    return returnArr;
+}
+
 //
 //// Businesses
 //
@@ -49,49 +72,37 @@ app.listen(port, function(){
 // Get Business List
 app.get("/businesses", function(req, res, next){
     console.log("== List Business Request", req.query);
-    let page = 1;
-    let pageSize = 10;
-    let totalPage = Math.floor(businessList.length / pageSize) + 1;  //Calculate total pages
-    if(businessList.length % pageSize === 0){ //If number of businesses divisible by 10, total pages reduced by 1
-        totalPage -= 1;
-    }
-    if(req.query.page){         //If a page is specfied
-        page = req.query.page;  //Set the page to grab
-        if(page > totalPage || page < 0){  //If the page doesn't exist
-            next();             //Go to 404 not found
-        }
-    }
-    let nextPage = page + 1;    //Get the next page
-    let prevPage = page - 1;    //Get the previous page
-    if(nextPage > totalPage){  //If the next page is greater than the total pages, grab page 1
-        nextPage = 1;
-    }
-    if(prevPage === 0){         //If the previous page is 0, grab the last page
-        prevPage = totalPage;
-    }
+    const pageSize = 10;
+    //totalPage, page, error, nextPage, prevPage
+    let result = pagination(req.query.page, pageSize, businessList);
 
-    let businessLinks = [];
-    for(let i=((page-1)*pageSize); i<page*pageSize; i++){
-        if(i < businessList.length){
-            businessLinks.push("/businesses/"+businessList[i].business_id);
+    if(result[2] == 0){
+        let businessLinks = [];
+        for(let i=((result[1]-1)*pageSize); i<result[1]*pageSize; i++){
+            if(i < businessList.length){
+                businessLinks.push("/businesses/"+businessList[i].business_id);
+            }
+            else{
+                break;
+            }
         }
-        else{
-            break;
-        }
-    }
 
-    res.status(200).send({      //Send the data
-        "page_number": page,
-        "total_pages": totalPage,
-        "page_size": pageSize,
-        "total_count": businessList.length,
-        "businesses": businessList,
-        "business_links": businessLinks,
-        "links": {
-            "nextPage": "/businesses?page="+nextPage,
-            "prevPage": "/businesses?page="+prevPage
-        }
-    });
+        res.status(200).send({      //Send the data
+            "page_number": parseInt(result[1]),
+            "total_pages": parseInt(result[0]),
+            "page_size": pageSize,
+            "total_count": businessList.length,
+            "businesses": businessList,
+            "business_links": businessLinks,
+            "links": {
+                "nextPage": "/businesses?page="+result[3],
+                "prevPage": "/businesses?page="+result[4]
+            }
+        });
+    }
+    else{
+        next();
+    }
 });
 
 // Add Business
@@ -201,8 +212,38 @@ app.delete("/businesses/:bId", function(req, res, next){
 app.get("/businesses/owner/:uId", function(req, res, next){
     console.log("== List Owned Businesses Request UserID:", req.params.uId);
     const userId = req.params.uId;  //Get requested userId
-    const ownedBusinesses = businessList.filter(business => business.owner_id == userId);   //Grab all businesses with owner id = requested id
-    res.status(200).send(ownedBusinesses);  //Send owned list
+    //Grab all businesses with owner id = requested id
+    const ownedBusinesses = businessList.filter(business => business.owner_id == userId);
+
+    let page = 1;
+    const pageSize = 10;
+    let totalPage = Math.floor(ownedBusinesses.length / pageSize) + 1;  //Calculate total pages
+    if(ownedBusinesses.length % pageSize === 0){ //If number of owned businesses divisible by page size, total pages reduced by 1
+        totalPage -= 1;
+    }
+    if(req.query.page){         //If a page is specfied
+        page = req.query.page;  //Set the page to grab
+        if(page > totalPage || page < 0){  //If the page doesn't exist
+            next();             //Go to 404 not found
+        }
+    }
+    let nextPage = page + 1;    //Get the next page
+    let prevPage = page - 1;    //Get the previous page
+    if(nextPage > totalPage){  //If the next page is greater than the total pages, grab page 1
+        nextPage = 1;
+    }
+    if(prevPage === 0){         //If the previous page is 0, grab the last page
+        prevPage = totalPage;
+    }
+
+    let businessLinks = [];
+    ownedBusinesses.forEach((business) => { //HATEOAS for all owned businesses
+        businessLinks.push("/businesses/"+business.business_id);
+    });
+    res.status(200).send({
+        "businesses": ownedBusinesses,
+        "business_links": businessLinks
+    });
 });
 
 
