@@ -50,8 +50,9 @@ app.listen(port, function(){
 app.get("/businesses", function(req, res, next){
     console.log("== List Business Request", req.query);
     let page = 1;
-    let totalPage = Math.floor(businessList.length / 10) + 1;  //Calculate total pages
-    if(businessList.length % 10 === 0){ //If number of businesses divisible by 10, total pages reduced by 1
+    let pageSize = 10;
+    let totalPage = Math.floor(businessList.length / pageSize) + 1;  //Calculate total pages
+    if(businessList.length % pageSize === 0){ //If number of businesses divisible by 10, total pages reduced by 1
         totalPage -= 1;
     }
     if(req.query.page){         //If a page is specfied
@@ -69,12 +70,23 @@ app.get("/businesses", function(req, res, next){
         prevPage = totalPage;
     }
 
+    let businessLinks = [];
+    for(let i=((page-1)*pageSize); i<page*pageSize; i++){
+        if(i < businessList.length){
+            businessLinks.push("/businesses/"+businessList[i].business_id);
+        }
+        else{
+            break;
+        }
+    }
+
     res.status(200).send({      //Send the data
         "page_number": page,
         "total_pages": totalPage,
-        "page_size": 10,
+        "page_size": pageSize,
         "total_count": businessList.length,
         "businesses": businessList,
+        "business_links": businessLinks,
         "links": {
             "nextPage": "/businesses?page="+nextPage,
             "prevPage": "/businesses?page="+prevPage
