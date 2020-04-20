@@ -139,9 +139,11 @@ app.get("/businesses/:bId", function(req, res, next){
             let photos = photoList.filter((photo) => {
                 return photo.businessId == business.businessId;
             });
+            let reviewerList = reviews.map(review => "/reviews/user/"+review.userId);
             res.status(200).send({
                 "businessData": business,
                 "reviews": reviews,
+                "reviewers": reviewerList,
                 "photos": photos
             }); //Send business's data
         }
@@ -244,7 +246,28 @@ app.get("/reviews/user/:uId", function(req, res, next){
     console.log("== List All Written Reviews UserID:", req.params.uId);
     const userId = req.params.uId;  //Get requested userId
     const reviews = reviewList.filter(business => business.userId == userId);  //Grab all reviews with user id = requested user id
-    res.status(200).send(reviews);  //Send written review list
+    const pageSize = 10;
+    //totalPage, page, error, nextPage, prevPage
+    let result = pagination(req.query.page, pageSize, reviews);
+    if(result[2] == 0){
+        const reviewLinks = reviews.map(review => "/businesses/"+review.businessId);
+
+        res.status(200).send({
+            "pageNumber": parseInt(result[1]),
+            "totalPages": parseInt(result[0]),
+            "pageSize": pageSize,
+            "totalCount": reviews.length,
+            "reviews": reviews,
+            "reviewedBusinesses": reviewLinks,
+            "pageLinks": {
+                "nextPage": "/reviews/user/"+req.params.uId+"?page="+result[3],
+                "prevPage": "/reviews/user/"+req.params.uId+"?page="+result[4]
+            }
+        });  //Send written review list
+    }
+    else{
+        next();
+    }
 });
 
 // Submit Business Review
@@ -352,7 +375,34 @@ app.get("/photos/:uId", function(req, res, next){
     console.log("== List All Uploaded Photos UserID:", req.params.uId);
     const userId = req.params.uId;  //Get requested userId
     const photos = photoList.filter(photo => photo.userId == userId);  //Grab all reviews with user id = requested user id
-    res.status(200).send(photos);  //Send written review list
+
+    const pageSize = 10;
+    let result = pagination(req.query.page, pageSize, photos);
+    if(result[2] == 0){
+        let businessLinks = [];
+        let usedIds = [];
+        photos.forEach((photo) => { //HATEOAS for all uploaded photos for businesses
+            if(usedIds.indexOf(photo.businessId) === -1){
+                usedIds.push(photo.businessId);
+                businessLinks.push("/businesses/"+photo.businessId);
+            }
+        });
+        res.status(200).send({
+            "pageNumber": parseInt(result[1]),
+            "totalPages": parseInt(result[0]),
+            "pageSize": pageSize,
+            "totalCount": photos.length,
+            "photos": photos,
+            "businessLinks": businessLinks,
+            "pageLinks": {
+                "nextPage": "/photos/"+req.params.uId+"?page="+result[3],
+                "prevPage": "/photos/"+req.params.uId+"?page="+result[4]
+            }
+        });
+    }
+    else{
+        next();
+    }
 });
 
 // Add Business Image
