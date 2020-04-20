@@ -29,16 +29,16 @@ app.listen(port, function(){
  * 
  * Users:
  * X-Get Business List
- * ?-Get Single Business Info
+ * X-Get Single Business Info
  * X-Submit Business Review
  * X-Modify Business Review
  * X-Delete Business Review
- * -Upload Business Image
- * -Delete Business Photo
- * -Modify Business Photo Caption
+ * X-Upload Business Image
+ * X-Delete Business Photo
+ * X-Modify Business Photo Caption
  * X-List Owned Businesses
  * X-List All Written Reviews
- * -List All Uploaded Photos
+ * X-List All Uploaded Photos
  * 
 */
 
@@ -118,9 +118,13 @@ app.get("/businesses/:bId", function(req, res, next){
             let reviews = reviewList.filter((review) => {
                 return review.business_id == business.business_id;
             });
+            let photos = photoList.filter((photo) => {
+                return photo.business_id == business.business_id;
+            });
             res.status(200).send({
                 "business_data": business,
-                "reviews": reviews
+                "reviews": reviews,
+                "photos": photos
             }); //Send business's data
         }
     });
@@ -136,13 +140,15 @@ app.put("/businesses/:bId", function(req, res, next){
     if(req.body && req.body.name && req.body.address && req.body.city && req.body.state && req.body.zip && req.body.phone && req.body.category && req.body.subcategories){
         const reqId = req.params.bId;    //Get requested id
         let found = false;
-        for(let i=0; i<businessList.length; i++){   //Search through all businesses
-            if(businessList[i].business_id == reqId){//If business id matches requested id
+        for(let i=0; i<businessList.length; i++){       //Search through all businesses
+            if(businessList[i].business_id == reqId){   //If business id matches requested id
+                req.body.owner_id = businessList[i].owner_id;
+                req.body.business_id = businessList[i].business_id;
                 businessList[i] = req.body; //Modify the business
                 found = true;
                 res.status(200).send({
                     msg: "Business modified.",
-                    input: businessList[i]
+                    input: req.body
                 });
                 break;
             }
@@ -248,16 +254,18 @@ app.post("/reviews", function(req, res, next){
 app.put("/reviews/:rId", function(req, res, next){
     console.log("== Modify Business Review Request", req.body);
     //Check for required fields
-    if(req.body && req.body.star && req.body.dollar_sign && req.body.description && req.body.business_id && req.body.user_id){
+    if(req.body && req.body.star && req.body.dollar_sign && req.body.description){
         const reqId = req.params.rId;    //Get requested id
         let found = false;
         for(let i=0; i<reviewList.length; i++){     //Search through all reviews
             if(reviewList[i].review_id == reqId){   //If review id matches requested id
-                reviewList[i] = req.body; //Modify the review
+                reviewList[i].star = req.body.star; //Modify the review
+                reviewList[i].dollar_sign = req.body.dollar_sign;
+                reviewList[i].description = req.body.description;
                 found = true;
                 res.status(200).send({
                     msg: "Review modified.",
-                    input: businessList[i]
+                    input: req.body
                 });
                 break;
             }
@@ -278,8 +286,8 @@ app.delete("/reviews/:rId", function(req, res, next){
     console.log("== Delete Business Review Request");
     const reqId = req.params.rId;    //Get requested id
     let found = false;
-    for(let i=0; i<reviewList.length; i++){   //Search through all reviews
-        if(reviewList[i].review_id == reqId){    //If business id matches requested id
+    for(let i=0; i<reviewList.length; i++){     //Search through all reviews
+        if(reviewList[i].review_id == reqId){   //If review id matches requested id
             found = true;
             reviewList.splice(i, 1);  // Remove the business
             res.status(200).send({
@@ -304,6 +312,78 @@ app.get("/photos/:uId", function(req, res, next){
     const userId = req.params.uId;  //Get requested userId
     const photos = photoList.filter(photo => photo.user_id == userId);  //Grab all reviews with user id = requested user id
     res.status(200).send(photos);  //Send written review list
+});
+
+// Add Business Image
+app.post("/photos", function(req, res, next){
+    console.log("== Add Photo Request", req.body);
+    if(req.body && req.body.url && req.body.caption && req.body.business_id && req.body.user_id){
+        let newPhoto = req.body;    //Grab the photo info
+        newPhoto.photo_id = 1;            //Generate new photo id
+        photoList.forEach(function(photo){    //Search through all photos
+            if(photo.photo_id >= newPhoto.photo_id){     //Find highest current photo id
+                newPhoto.photo_id = photo.photo_id + 1;  //Add 1 to current highest photo id
+            }
+        });
+        photoList.push(newPhoto);//Add business to the list
+        res.status(201).send({
+            "msg": "Photo successfully added.",
+            "newPhoto": newPhoto
+        });
+    }
+    else{
+        res.status(400).send({
+            err: "Request doesn't have the required fields."
+        });
+    }
+});
+
+// Modify Business Image Caption
+app.put("/photos/:pId", function(req, res, next){
+    console.log("== Modify Photo Caption Request", req.body);
+    if(req.body && req.body.caption){
+        const pId = req.params.pId;
+        let found = false;
+        for(let i=0; i<photoList.length; i++){
+            if(photoList[i].photo_id == pId){
+                found = true;
+                photoList[i].caption = req.body.caption;
+                res.status(200).send({
+                    "msg": "Photo caption modified.",
+                    "caption_input": photoList[i].caption
+                });
+            };
+        }
+        if(!found){
+            next();
+        }
+    }
+    else{
+        res.status(400).send({
+            err: "Request doesn't have the required fields."
+        });
+    }
+});
+
+// Delete Business Photo
+app.delete("/photos/:pId", function(req, res, next){
+    console.log("== Delete Photo Request");
+    const reqId = req.params.pId;    //Get requested id
+    let found = false;
+    for(let i=0; i<photoList.length; i++){  //Search through all photos
+        if(photoList[i].photo_id == reqId){ //If photo id matches requested id
+            found = true;
+            photoList.splice(i, 1);  // Remove the photo
+            res.status(200).send({
+                msg: "Photo deleted.",
+                id: reqId
+            });
+            break;
+        }
+    }
+    if(!found){ //If requested id was not found, go to 404
+        next();
+    }
 });
 
 app.use("*", function(req, res, next){
