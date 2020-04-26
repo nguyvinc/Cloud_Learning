@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = process.env.PORT || 8000;
 
-const lodgings = require('./lodging-data.json');
+const lodgings = require('../lodging-data.json');
 
 app.use(bodyParser.json());
 
