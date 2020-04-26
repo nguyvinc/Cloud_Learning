@@ -18,4 +18,4 @@ ENV PORT=8000
 EXPOSE ${PORT}
 
 # Set default command to be run when creating a container from this image
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "lodgings"]
