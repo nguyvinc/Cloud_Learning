@@ -39,24 +39,13 @@ app.listen(port, function(){
 
 function pagination(page, pageSize, list){
     let returnArr = [0, 1, 0, 0, 0]; //totalPage, page, error, nextPage, prevPage
-    returnArr[0] = Math.floor(list.length / pageSize) + 1;  //Calculate total pages
-    if(list.length % pageSize === 0){ //If number of elements divisible by page size, total pages reduced by 1
-        returnArr[0] -= 1;
-    }
+    returnArr[0] = Math.ceil(list.length / pageSize);  //Calculate total pages
     if(page){   //If a page is specfied
         returnArr[1] = page;    //Set the page to grab
-        if(returnArr[1] > returnArr[0] || returnArr[1] < 0){    //If the page doesn't exist
-            returnArr[2] = 1;   //Set error flag
-        }
+        returnArr[2] = (returnArr[1] > returnArr[0] || returnArr[1] < 0) ? 1 : 0;   //Set error flag if page is greater than total pages or is less than 0
     }
-    returnArr[3] = returnArr[1] + 1;    //Get the next page
-    returnArr[4] = returnArr[1] - 1;    //Get the previous page
-    if(returnArr[3] > returnArr[0]){  //If the next page is greater than the total pages, grab page 1
-        returnArr[3] = 1;
-    }
-    if(returnArr[4] === 0){         //If the previous page is 0, grab the last page
-        returnArr[4] = returnArr[0];
-    }
+    returnArr[3] = (returnArr[3] > returnArr[0]) ? 1 : returnArr[1] + 1;    //Get the next page
+    returnArr[4] = (returnArr[4] === 0) ? returnArr[0] : returnArr[1] - 1;    //Get the previous page
     return returnArr;
 }
 
