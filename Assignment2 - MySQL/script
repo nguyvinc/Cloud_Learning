@@ -1,0 +1,5 @@
+#!/bin/bash
+
+docker run -d --name mysql-server --network mysql-net -v "assignment2-mysql_yelp-volume:/var/lib/mysql" -e "MYSQL_RANDOM_ROOT_PASSWORD=yes" -e "MYSQL_DATABASE=miniYelp" -e "MYSQL_USER=test" -e "MYSQL_PASSWORD=test" mysql
+
+docker run --rm -it	--network mysql-net	mysql mysql -h mysql-server -u test -p
