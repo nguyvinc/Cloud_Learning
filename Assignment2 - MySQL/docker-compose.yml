@@ -1,11 +1,11 @@
-version: "3"
+version: "3.2"
 services:
     api:
         build: .
         networks:
             - yelpnet
         ports:
-            - 8000:8000
+            - "8000:8000"
     db:
         image: mysql
         volumes: 
@@ -18,10 +18,12 @@ services:
         networks:
             - yelpnet
         environment:
-            MYSQL_ROOT_PASSWORD: root
-            MYSQL_DATABASE: miniYelp
-            MYSQL_USER: test
-            MYSQL_PASSWORD: test
+            MYSQL_ROOT_PASSWORD: "root"
+            MYSQL_DATABASE: "miniYelp"
+            MYSQL_USER: "test"
+            MYSQL_PASSWORD: "test"
+        expose:
+            - "3306"
 
 volumes:
     yelp-volume:
@@ -30,4 +32,3 @@ volumes:
 networks:
     yelpnet:
         driver: bridge
-        name: yelpnet
