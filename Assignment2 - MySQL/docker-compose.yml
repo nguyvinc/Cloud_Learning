@@ -1,0 +1,33 @@
+version: "3"
+services:
+    api:
+        build: .
+        networks:
+            - yelpnet
+        ports:
+            - 8000:8000
+    db:
+        image: mysql
+        volumes: 
+            - type: volume
+              source: yelp-volume
+              target: /var/lib/mysql
+            - type: bind
+              source: ./sql_script
+              target: /docker-entrypoint-initdb.d
+        networks:
+            - yelpnet
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: miniYelp
+            MYSQL_USER: test
+            MYSQL_PASSWORD: test
+
+volumes:
+    yelp-volume:
+        external: false
+
+networks:
+    yelpnet:
+        driver: bridge
+        name: yelpnet
