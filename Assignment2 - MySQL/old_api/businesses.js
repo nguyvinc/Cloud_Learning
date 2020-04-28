@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const validation = require('../lib/validation');
-const mysqlPool = require('../lib/mysqlPool');
 
 const businesses = require('../data/businesses');
 const { reviews } = require('./reviews');
@@ -26,37 +25,18 @@ const businessSchema = {
   email: { required: false }
 };
 
-async function getBusinessCount(){
-  const [results, fields] = await mysqlPool.query(
-    "SELECT COUNT(*) AS count FROM `Businesses`"
-  );
-  console.log("== Fields:", fields);
-  return results[0].count;
-}
-
-async function getBusinessesPage(page){
-  const numPerPage = 10;
-  const numBusinesses = await getBusinessCount();
-  const lastPage = Math.ceil(numBusinesses / numPerPage);
-}
-
 /*
  * Route to return a list of businesses.
  */
-router.get('/', async (req, res) => {
-  const businessesPage = await getBusinessesPage((req.query.page || 1));
-  res.status(200).send(businessesPage);
+router.get('/', function (req, res) {
 
-  
   /*
    * Compute page number based on optional query string parameter `page`.
    * Make sure page is within allowed bounds.
    */
   let page = parseInt(req.query.page) || 1;
   const numPerPage = 10;
-  //const lastPage = Math.ceil(businesses.length / numPerPage);
-  const numBusinesses = await getBusinessCount();
-  const lastPage = Math.ceil(numBusinesses / numPerPage);
+  const lastPage = Math.ceil(businesses.length / numPerPage);
   page = page < 1 ? 1 : page;
   page = page > lastPage ? lastPage : page;
 
@@ -89,10 +69,10 @@ router.get('/', async (req, res) => {
     pageNumber: page,
     totalPages: lastPage,
     pageSize: numPerPage,
-    totalCount: numBusinesses,
+    totalCount: businesses.length,
     links: links
   });
-  
+
 });
 
 /*
