@@ -115,7 +115,8 @@ router.post('/', async (req, res, next) => {
         error: "Error inserting business. Please try again."
       })
     }
-  } else {
+  } 
+  else {
     res.status(400).json({
       error: "Request body is not a valid business object"
     });
@@ -137,17 +138,17 @@ async function postBusiness(business){
  * Route to fetch info about a specific business.
  */
 router.get('/:businessid', async (req, res, next) => {
-  const businessId = parseInt(req.params.businessid);
   try{
-    const business = await getSingleBusiness(businessId);
-    if(business){
-      res.status(200).send(business);
+    const businessId = parseInt(req.params.businessid);
+    const businessInfo = await getSingleBusiness(businessId);
+    if(businessInfo.business){
+      res.status(200).send(businessInfo);
     }
     else{
       next();
     }
   }
-  catch (err){
+  catch(err){
     res.status(500).send({
       error: "Unable to fetch business."
     });
@@ -246,7 +247,7 @@ router.delete('/:businessid', async (req, res, next) => {
 async function deleteBusiness(id){
   const [results] = await mysqlPool.query(
     "DELETE FROM `Businesses` WHERE `id` = ?;",
-    [id]
+    id
   );
   return results.affectedRows > 0;
 }
