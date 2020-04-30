@@ -13,7 +13,7 @@ exports.businesses = businesses;
  * Schema describing required/optional fields of a business object.
  */
 const businessSchema = {
-  ownerid: { required: true },
+  ownerId: { required: true },
   name: { required: true },
   address: { required: true },
   city: { required: true },
@@ -35,7 +35,6 @@ router.get('/', async (req, res) => {
     res.status(200).send(businessesPage);
   }
   catch (err){
-    console.error("== Error:", err);
     res.status(500).send({
       err: "Error fetching business list."
     });
@@ -46,7 +45,6 @@ async function getBusinessCount(){
   const [results, fields] = await mysqlPool.query(
     "SELECT COUNT(*) AS count FROM Businesses;"
   );
-  console.log("== Fields:", fields);
   return results[0].count;
 }
 
@@ -103,14 +101,20 @@ async function getBusinessesPage(page){
  */
 router.post('/', async (req, res, next) => {
   if (validation.validateAgainstSchema(req.body, businessSchema)) {
-    const business = validation.extractValidFields(req.body, businessSchema);
-    const newId = await postBusiness(business);
-    res.status(201).json({
-      id: newId,
-      links: {
-        business: `/businesses/${newId}`
-      }
-    });
+    const newId = await postBusiness(req.body);
+    if(newId){
+      res.status(201).json({
+        id: newId,
+        links: {
+          business: `/businesses/${newId}`
+        }
+      });
+    }
+    else{
+      res.status(500).send({
+        error: "Error inserting business. Please try again."
+      })
+    }
   } else {
     res.status(400).json({
       error: "Request body is not a valid business object"
@@ -118,17 +122,13 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-async function postBusiness(body){
-  await mysqlPool.query(
-    "INSERT INTO `Businesses` (`ownerId`, `name`, `address`, `city`, `state`, `zip`, `phone`, `category`, `subcategory`, `website`, `email`)" +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-    [body.ownerid, body.name, body.address, body.city, body.state, body.zip, body.phone, body.category, body.subcategory, body.website, body.email]
-  );
-
+async function postBusiness(business){
+  const validatedBusiness = validation.extractValidFields(business, businessSchema);
   const [results] = await mysqlPool.query(
-    "SELECT LAST_INSERT_ID() AS id;"
+    "INSERT INTO `Businesses` SET ?;",
+    validatedBusiness
   );
-  return results[0].id;
+  return results.insertId;
 }
 
 
@@ -136,60 +136,117 @@ async function postBusiness(body){
 /*
  * Route to fetch info about a specific business.
  */
-router.get('/:businessid', function (req, res, next) {
-  const businessid = parseInt(req.params.businessid);
-  if (businesses[businessid]) {
-    /*
-     * Find all reviews and photos for the specified business and create a
-     * new object containing all of the business data, including reviews and
-     * photos.
-     */
-    const business = {
-      reviews: reviews.filter(review => review && review.businessid === businessid),
-      photos: photos.filter(photo => photo && photo.businessid === businessid)
-    };
-    Object.assign(business, businesses[businessid]);
-    res.status(200).json(business);
-  } else {
-    next();
+router.get('/:businessid', async (req, res, next) => {
+  const businessId = parseInt(req.params.businessid);
+  try{
+    const business = await getSingleBusiness(businessId);
+    if(business){
+      res.status(200).send(business);
+    }
+    else{
+      next();
+    }
+  }
+  catch (err){
+    res.status(500).send({
+      error: "Unable to fetch business."
+    });
   }
 });
+
+async function getSingleBusiness(id){
+  const [reviews] = await mysqlPool.query(
+    "SELECT * FROM `Reviews`" +
+    "WHERE `Reviews`.`businessId`=?;",
+    [id]
+  );
+  const [photos] = await mysqlPool.query(
+    "SELECT * FROM `Photos`" +
+    "WHERE `Photos`.`businessId`=?;",
+    [id]
+  );
+  const [business] = await mysqlPool.query(
+    "SELECT * FROM `Businesses`" +
+    "WHERE `Businesses`.`id`=?;",
+    [id]
+  );
+  return {
+    business: business[0],
+    reviews: reviews,
+    photos: photos
+  };
+}
+
+
 
 /*
  * Route to replace data for a business.
  */
-router.put('/:businessid', function (req, res, next) {
-  const businessid = parseInt(req.params.businessid);
-  if (businesses[businessid]) {
-
+router.put('/:businessid', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.businessid);
     if (validation.validateAgainstSchema(req.body, businessSchema)) {
-      businesses[businessid] = validation.extractValidFields(req.body, businessSchema);
-      businesses[businessid].id = businessid;
-      res.status(200).json({
-        links: {
-          business: `/businesses/${businessid}`
-        }
-      });
-    } else {
-      res.status(400).json({
+      const updatedId = await updateBusiness(req.body, id);
+      if(updatedId){
+        res.status(200).json({
+          links: {
+            business: `/businesses/${id}`
+          }
+        });
+      }
+      else{
+        next();
+      }
+    } 
+    else {
+      res.status(400).send({
         error: "Request body is not a valid business object"
       });
     }
-
-  } else {
-    next();
+  }
+  catch(err) {
+    res.status(500).send({
+      error: "Business could not be updated. Please try again."
+    });
   }
 });
+
+async function updateBusiness(body, id){
+  const validatedBusiness = validation.extractValidFields(body, businessSchema);
+  const [results] = await mysqlPool.query(
+    "UPDATE `Businesses` SET ? WHERE `id`=?;",
+    [validatedBusiness, id]
+  );
+  return results.affectedRows > 0;
+}
+
+
 
 /*
  * Route to delete a business.
  */
-router.delete('/:businessid', function (req, res, next) {
-  const businessid = parseInt(req.params.businessid);
-  if (businesses[businessid]) {
-    businesses[businessid] = null;
-    res.status(204).end();
-  } else {
-    next();
+router.delete('/:businessid', async (req, res, next) => {
+  try{
+    const businessId = parseInt(req.params.businessid);
+    const deleteSuccess = await deleteBusiness(businessId);
+    if (deleteSuccess) {
+      res.status(204).end();
+    }
+    else {
+      next();
+    }
+  }
+  catch (err){
+    res.status(500).send({
+      error: "Error deleting business. Please try again."
+    });
   }
 });
+
+async function deleteBusiness(id){
+  const [results] = await mysqlPool.query(
+    "DELETE FROM `Businesses` WHERE `id` = ?;",
+    [id]
+  );
+  return results.affectedRows > 0;
+}
