@@ -90,9 +90,9 @@ async function getPhoto(id){
  * Route to update a photo.
  */
 router.put('/:photoID', async (req, res, next) => {
-  try{
-    const photoId = parseInt(req.params.photoID);
-    if (validation.validateAgainstSchema(req.body, photoSchema)){
+  if(validation.validateAgainstSchema(req.body, photoSchema)){
+    try{
+      const photoId = parseInt(req.params.photoID);
       const updatedPhoto = await updatePhoto(req.body, photoId);
       if(updatedPhoto.error == 404){
         next();
@@ -110,17 +110,16 @@ router.put('/:photoID', async (req, res, next) => {
           }
         });
       }
-    } 
-    else {
-      res.status(400).send({
-        error: "Request body is not a valid photo object"
+    }
+    catch(err){
+      res.status(500).send({
+        error: "Error updating photo. Please try again."
       });
     }
-    //404
   }
-  catch(err){
-    res.status(500).send({
-      error: "Error updating photo. Please try again."
+  else {
+    res.status(400).send({
+      error: "Request body is not a valid photo object"
     });
   }
 });
@@ -133,11 +132,11 @@ async function updatePhoto(photo, id){
   );
 
   if(!curPhoto[0]){
-    return {error:404};
+    return {error: 404};
   }
   //If the userId and businessId don't match, can't update
   else if (!(curPhoto[0].userId == validatedPhoto.userId && curPhoto[0].businessId == validatedPhoto.businessId)){
-    return {error:403}
+    return {error: 403}
   }
 
   const [results] = await mysqlPool.query(
@@ -165,7 +164,7 @@ router.delete('/:photoID', async (req, res, next) => {
   }
   catch(err){
     res.status(500).send({
-      error: "Error deleteing photo. Please try again."
+      error: "Error deleting photo. Please try again."
     })
   }
 });
