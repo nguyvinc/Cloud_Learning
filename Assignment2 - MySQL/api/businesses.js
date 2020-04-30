@@ -26,39 +26,40 @@ const businessSchema = {
   email: { required: false }
 };
 
+/*
+ * Route to return a list of businesses.
+ */
+router.get('/', async (req, res) => {
+  try{
+    const businessesPage = await getBusinessesPage((req.query.page || 1));
+    res.status(200).send(businessesPage);
+  }
+  catch (err){
+    console.error("== Error:", err);
+    res.status(500).send({
+      err: "Error fetching business list."
+    });
+  }
+});
+
 async function getBusinessCount(){
   const [results, fields] = await mysqlPool.query(
-    "SELECT COUNT(*) AS count FROM `Businesses`"
+    "SELECT COUNT(*) AS count FROM Businesses;"
   );
   console.log("== Fields:", fields);
   return results[0].count;
 }
 
 async function getBusinessesPage(page){
-  const numPerPage = 10;
-  const numBusinesses = await getBusinessCount();
-  const lastPage = Math.ceil(numBusinesses / numPerPage);
-}
-
-/*
- * Route to return a list of businesses.
- */
-router.get('/', async (req, res) => {
-  const businessesPage = await getBusinessesPage((req.query.page || 1));
-  res.status(200).send(businessesPage);
-
-  
   /*
    * Compute page number based on optional query string parameter `page`.
    * Make sure page is within allowed bounds.
    */
-  let page = parseInt(req.query.page) || 1;
   const numPerPage = 10;
-  //const lastPage = Math.ceil(businesses.length / numPerPage);
   const numBusinesses = await getBusinessCount();
   const lastPage = Math.ceil(numBusinesses / numPerPage);
-  page = page < 1 ? 1 : page;
-  page = page > lastPage ? lastPage : page;
+  page = (page < 1) ? 1 : page;
+  page = (page > lastPage) ? lastPage : page;
 
   /*
    * Calculate starting and ending indices of businesses on requested page and
@@ -68,9 +69,7 @@ router.get('/', async (req, res) => {
   const end = start + numPerPage;
   const pageBusinesses = businesses.slice(start, end);
 
-  /*
-   * Generate HATEOAS links for surrounding pages.
-   */
+  // Generate HATEOAS links for surrounding pages.
   const links = {};
   if (page < lastPage) {
     links.nextPage = `/businesses?page=${page + 1}`;
@@ -81,32 +80,35 @@ router.get('/', async (req, res) => {
     links.firstPage = '/businesses?page=1';
   }
 
-  /*
-   * Construct and send response.
-   */
-  res.status(200).json({
-    businesses: pageBusinesses,
-    pageNumber: page,
+  // Get all businesses from corresponding page
+  const offset = (page-1) * numPerPage;
+  const [results] = await mysqlPool.query(
+    "SELECT * FROM `Businesses` ORDER BY `id` ASC LIMIT ?, ?;",
+    [offset, numPerPage]
+  );
+
+  return {
+    businesses: results,
+    page: page,
     totalPages: lastPage,
     pageSize: numPerPage,
-    totalCount: numBusinesses,
-    links: links
-  });
-  
-});
+    count: numBusinesses
+  };
+}
+
+
 
 /*
  * Route to create a new business.
  */
-router.post('/', function (req, res, next) {
+router.post('/', async (req, res, next) => {
   if (validation.validateAgainstSchema(req.body, businessSchema)) {
     const business = validation.extractValidFields(req.body, businessSchema);
-    business.id = businesses.length;
-    businesses.push(business);
+    const newId = await postBusiness(business);
     res.status(201).json({
-      id: business.id,
+      id: newId,
       links: {
-        business: `/businesses/${business.id}`
+        business: `/businesses/${newId}`
       }
     });
   } else {
@@ -115,6 +117,21 @@ router.post('/', function (req, res, next) {
     });
   }
 });
+
+async function postBusiness(body){
+  await mysqlPool.query(
+    "INSERT INTO `Businesses` (`ownerId`, `name`, `address`, `city`, `state`, `zip`, `phone`, `category`, `subcategory`, `website`, `email`)" +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+    [body.ownerid, body.name, body.address, body.city, body.state, body.zip, body.phone, body.category, body.subcategory, body.website, body.email]
+  );
+
+  const [results] = await mysqlPool.query(
+    "SELECT LAST_INSERT_ID() AS id;"
+  );
+  return results[0].id;
+}
+
+
 
 /*
  * Route to fetch info about a specific business.
