@@ -2,10 +2,7 @@ const router = require('express').Router();
 const validation = require('../lib/validation');
 const mysqlPool = require("../lib/mysqlPool");
 
-const photos = require('../data/photos');
-
 exports.router = router;
-exports.photos = photos;
 
 /*
  * Schema describing required/optional fields of a photo object.

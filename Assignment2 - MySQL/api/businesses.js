@@ -2,12 +2,7 @@ const router = require('express').Router();
 const validation = require('../lib/validation');
 const mysqlPool = require('../lib/mysqlPool');
 
-const businesses = require('../data/businesses');
-const { reviews } = require('./reviews');
-const { photos } = require('./photos');
-
 exports.router = router;
-exports.businesses = businesses;
 
 /*
  * Schema describing required/optional fields of a business object.
@@ -58,14 +53,6 @@ async function getBusinessesPage(page){
   const lastPage = Math.ceil(numBusinesses / numPerPage);
   page = (page < 1) ? 1 : page;
   page = (page > lastPage) ? lastPage : page;
-
-  /*
-   * Calculate starting and ending indices of businesses on requested page and
-   * slice out the corresponsing sub-array of busibesses.
-   */
-  const start = (page - 1) * numPerPage;
-  const end = start + numPerPage;
-  const pageBusinesses = businesses.slice(start, end);
 
   // Generate HATEOAS links for surrounding pages.
   const links = {};

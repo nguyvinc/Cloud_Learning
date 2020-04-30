@@ -2,10 +2,7 @@ const router = require('express').Router();
 const validation = require('../lib/validation');
 const mysqlPool = require("../lib/mysqlPool");
 
-const reviews = require('../data/reviews');
-
 exports.router = router;
-exports.reviews = reviews;
 
 /*
  * Schema describing required/optional fields of a review object.
