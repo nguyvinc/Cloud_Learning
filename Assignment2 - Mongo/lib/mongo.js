@@ -20,6 +20,6 @@ exports.connectToDB = function(callback){
     });
 };
 
-exports.getDBReference = function (){
+exports.getDBReference = function(){
     return db;
 };
