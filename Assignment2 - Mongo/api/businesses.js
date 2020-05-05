@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const validation = require('../lib/validation');
-const mysqlPool = require('../lib/mysqlPool');
+const {getDBReference} = require('../lib/mongo');
 
 exports.router = router;
 
@@ -36,20 +36,15 @@ router.get('/', async (req, res) => {
   }
 });
 
-async function getBusinessCount(){
-  const [results, fields] = await mysqlPool.query(
-    "SELECT COUNT(*) AS count FROM Businesses;"
-  );
-  return results[0].count;
-}
-
 async function getBusinessesPage(page){
+  const db = getDBReference();
+  const collection = db.collection("businesses");
   /*
    * Compute page number based on optional query string parameter `page`.
    * Make sure page is within allowed bounds.
    */
   const numPerPage = 10;
-  const numBusinesses = await getBusinessCount();
+  const numBusinesses = await collection.countDocuments();
   const lastPage = Math.ceil(numBusinesses / numPerPage);
   page = (page < 1) ? 1 : page;
   page = (page > lastPage) ? lastPage : page;
@@ -67,10 +62,7 @@ async function getBusinessesPage(page){
 
   // Get all businesses from corresponding page
   const offset = (page-1) * numPerPage;
-  const [results] = await mysqlPool.query(
-    "SELECT * FROM `Businesses` ORDER BY `id` ASC LIMIT ?, ?;",
-    [offset, numPerPage]
-  );
+  const results = await collection.find({}).sort({_id: 1}).skip(offset).limit(numPerPage).toArray();
 
   return {
     businesses: results,
@@ -112,11 +104,11 @@ router.post('/', async (req, res, next) => {
 
 async function postBusiness(business){
   const validatedBusiness = validation.extractValidFields(business, businessSchema);
-  const [results] = await mysqlPool.query(
-    "INSERT INTO `Businesses` SET ?;",
-    validatedBusiness
-  );
-  return results.insertId;
+  const db = getDBReference();
+  const collection = db.collection("businesses");
+  const results = await collection.insertOne(validatedBusiness);
+
+  return results.insertedId;
 }
 
 
