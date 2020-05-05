@@ -1,7 +1,7 @@
 [
   {
     "id": 0,
-    "ownerid": 0,
+    "ownerId": 0,
     "name": "Block 15",
     "address": "300 SW Jefferson Ave.",
     "city": "Corvallis",
@@ -14,7 +14,7 @@
   },
   {
     "id": 1,
-    "ownerid": 1,
+    "ownerId": 1,
     "name": "Corvallis Brewing Supply",
     "address": "119 SW 4th St.",
     "city": "Corvallis",
@@ -27,7 +27,7 @@
   },
   {
     "id": 2,
-    "ownerid": 2,
+    "ownerId": 2,
     "name": "Robnett's Hardware",
     "address": "400 SW 2nd St.",
     "city": "Corvallis",
@@ -39,7 +39,7 @@
   },
   {
     "id": 3,
-    "ownerid": 3,
+    "ownerId": 3,
     "name": "First Alternative Co-op North Store",
     "address": "2855 NW Grant Ave.",
     "city": "Corvallis",
@@ -51,7 +51,7 @@
   },
   {
     "id": 4,
-    "ownerid": 4,
+    "ownerId": 4,
     "name": "WinCo Foods",
     "address": "2335 NW Kings Blvd.",
     "city": "Corvallis",
@@ -63,7 +63,7 @@
   },
   {
     "id": 5,
-    "ownerid": 5,
+    "ownerId": 5,
     "name": "Fred Meyer",
     "address": "777 NW Kings Blvd.",
     "city": "Corvallis",
@@ -75,7 +75,7 @@
   },
   {
     "id": 6,
-    "ownerid": 6,
+    "ownerId": 6,
     "name": "Interzone",
     "address": "1563 NW Monroe Ave.",
     "city": "Corvallis",
@@ -87,7 +87,7 @@
   },
   {
     "id": 7,
-    "ownerid": 7,
+    "ownerId": 7,
     "name": "The Beanery Downtown",
     "address": "500 SW 2nd St.",
     "city": "Corvallis",
@@ -99,7 +99,7 @@
   },
   {
     "id": 8,
-    "ownerid": 8,
+    "ownerId": 8,
     "name": "Local Boyz",
     "address": "1425 NW Monroe Ave.",
     "city": "Corvallis",
@@ -111,7 +111,7 @@
   },
   {
     "id": 9,
-    "ownerid": 9,
+    "ownerId": 9,
     "name": "Darkside Cinema",
     "address": "215 SW 4th St.",
     "city": "Corvallis",
@@ -124,7 +124,7 @@
   },
   {
     "id": 10,
-    "ownerid": 10,
+    "ownerId": 10,
     "name": "The Book Bin",
     "address": "215 SW 4th St.",
     "city": "Corvallis",
@@ -136,7 +136,7 @@
   },
   {
     "id": 11,
-    "ownerid": 11,
+    "ownerId": 11,
     "name": "Cyclotopia",
     "address": "435 SW 2nd St.",
     "city": "Corvallis",
@@ -148,7 +148,7 @@
   },
   {
     "id": 12,
-    "ownerid": 12,
+    "ownerId": 12,
     "name": "Corvallis Cyclery",
     "address": "344 SW 2nd St.",
     "city": "Corvallis",
@@ -160,7 +160,7 @@
   },
   {
     "id": 13,
-    "ownerid": 13,
+    "ownerId": 13,
     "name": "Oregon Coffee & Tea",
     "address": "215 NW Monroe Ave.",
     "city": "Corvallis",
@@ -173,7 +173,7 @@
   },
   {
     "id": 14,
-    "ownerid": 14,
+    "ownerId": 14,
     "name": "Spaeth Lumber",
     "address": "1585 NW 9th St.",
     "city": "Corvallis",
@@ -185,7 +185,7 @@
   },
   {
     "id": 15,
-    "ownerid": 15,
+    "ownerId": 15,
     "name": "New Morning Bakery",
     "address": "219 SW 2nd St.",
     "city": "Corvallis",
@@ -197,7 +197,7 @@
   },
   {
     "id": 16,
-    "ownerid": 3,
+    "ownerId": 3,
     "name": "First Alternative Co-op South Store",
     "address": "1007 SE 3rd St.",
     "city": "Corvallis",
@@ -209,7 +209,7 @@
   },
   {
     "id": 17,
-    "ownerid": 7,
+    "ownerId": 7,
     "name": "The Beanery Monroe",
     "address": "2541 NW Monroe Ave.",
     "city": "Corvallis",
@@ -221,7 +221,7 @@
   },
   {
     "id": 18,
-    "ownerid": 0,
+    "ownerId": 0,
     "name": "Block 15 Brewery & Tap Room",
     "address": "3415 SW Deschutes St.",
     "city": "Corvallis",
