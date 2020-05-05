@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const validation = require('../lib/validation');
 const {getDBReference} = require('../lib/mongo');
+const ObjectID = require('mongodb').ObjectID;
 
 exports.router = router;
 
@@ -135,25 +136,31 @@ router.get('/:businessid', async (req, res, next) => {
 });
 
 async function getSingleBusiness(id){
-  const [reviews] = await mysqlPool.query(
-    "SELECT * FROM `Reviews`" +
-    "WHERE `Reviews`.`businessId`=?;",
-    [id]
-  );
-  const [photos] = await mysqlPool.query(
-    "SELECT * FROM `Photos`" +
-    "WHERE `Photos`.`businessId`=?;",
-    [id]
-  );
-  const [business] = await mysqlPool.query(
-    "SELECT * FROM `Businesses`" +
-    "WHERE `Businesses`.`id`=?;",
-    [id]
-  );
+  const db = getDBReference();
+  const business = await db.collection("businesses").aggregate([
+    {
+      $match: {_id: new ObjectID(id)}
+    },
+    {
+      $lookup: {
+        from: "reviews",
+        localField: "_id",
+        foreignField: "businessId",
+        as: "businessReviews"
+      }
+    },
+    {
+      $lookup: {
+        from: "photos",
+        localField: "_id",
+        foreignField: "businessId",
+        as: "businessPhotos"
+      }
+    }
+  ]);
+
   return {
-    business: business[0],
-    reviews: reviews,
-    photos: photos
+    business: business[0]
   };
 }
 
@@ -193,11 +200,12 @@ router.put('/:businessid', async (req, res, next) => {
 
 async function updateBusiness(body, id){
   const validatedBusiness = validation.extractValidFields(body, businessSchema);
-  const [results] = await mysqlPool.query(
-    "UPDATE `Businesses` SET ? WHERE `id`=?;",
-    [validatedBusiness, id]
+  const collection = getDBReference().collection("businesses");
+  const results = await collection.replaceOne(
+    {_id: new ObjectID(id)},
+    validatedBusiness
   );
-  return results.affectedRows > 0;
+  return results.matchedCount > 0;
 }
 
 
@@ -224,9 +232,9 @@ router.delete('/:businessid', async (req, res, next) => {
 });
 
 async function deleteBusiness(id){
-  const [results] = await mysqlPool.query(
-    "DELETE FROM `Businesses` WHERE `id` = ?;",
-    id
-  );
-  return results.affectedRows > 0;
+  const collection = getDBReference().collection("businesses");
+  const results = await collection.deleteOne({
+    _id: new ObjectID(id)
+  });
+  return results.deletedCount > 0;
 }
