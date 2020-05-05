@@ -7,34 +7,32 @@ services:
         ports:
             - "8000:8000"
         environment:
-            MYSQL_HOST: "assignment2-mysql_db_1"
-            MYSQL_DATABASE: "miniYelp"
-            MYSQL_USER: "test"
-            MYSQL_PASSWORD: "test"
+            MONGO_HOST: "assignment2-mongo_db_1"
+            MONGO_DATABASE: "miniYelp"
+            MONGO_USER: "test"
+            MONGO_PASSWORD: "test"
         depends_on:
             - db
     db:
-        image: mysql
+        image: mongo
         volumes: 
             - type: volume
-              source: yelp-volume
-              target: /var/lib/mysql
+              source: a2mongo-volume
+              target: /data/db/
             - type: bind
-              source: ./sql_script
+              source: ./mongo_script
               target: /docker-entrypoint-initdb.d
         networks:
             - yelpnet
         environment:
-            MYSQL_ROOT_PASSWORD: "root"
-            MYSQL_DATABASE: "miniYelp"
-            MYSQL_HOST: "localhost"
-            MYSQL_USER: "test"
-            MYSQL_PASSWORD: "test"
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: root
+            MONGO_INITDB_DATABASE: miniYelp
         expose:
-            - "3306"
+            - "27017"
 
 volumes:
-    yelp-volume:
+    a2mongo-volume:
         external: false
 
 networks:
