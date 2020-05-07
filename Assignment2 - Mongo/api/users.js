@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const mysqlPool = require("../lib/mysqlPool");
+const {getDBReference} = require("../lib/mongo");
 
 exports.router = router;
 
@@ -22,10 +22,10 @@ router.get('/:userid/businesses', async (req, res) => {
 });
 
 async function getUserBusinesses(id){
-  const [results] = await mysqlPool.query(
-    "SELECT * FROM `Businesses` WHERE `userId`=?;",
-    id
-  );
+  const db = getDBReference();
+  const results = await db.collection("businesses").find({
+    userId: id
+  });
   return results;
 }
 
@@ -50,10 +50,10 @@ router.get('/:userid/reviews', async (req, res) => {
 });
 
 async function getUserReviews(id){
-  const [results] = await mysqlPool.query(
-    "SELECT * FROM `Reviews` WHERE `userId`=?;",
-    id
-  );
+  const db = getDBReference();
+  const results = await db.collection("reviews").find({
+    userId: id
+  });
   return results;
 }
 
@@ -78,9 +78,9 @@ router.get('/:userid/photos', async (req, res) => {
 });
 
 async function getUserPhotos(id){
-  const [results] = await mysqlPool.query(
-    "SELECT * FROM `Photos` WHERE `userId`=?;",
-    id
-  );
+  const db = getDBReference();
+  const results = await db.collection("photos").find({
+    userId: id
+  });
   return results;
 }

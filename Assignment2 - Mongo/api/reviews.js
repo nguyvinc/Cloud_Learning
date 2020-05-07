@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const validation = require('../lib/validation');
-const mysqlPool = require("../lib/mysqlPool");
+const {getDBReference} = require("../lib/mongo");
+const ObjectID = require("mongodb").ObjectID;
 
 exports.router = router;
 
@@ -52,19 +53,17 @@ router.post('/', async (req, res, next) => {
 async function postReview(body){
   const validatedReview = validation.extractValidFields(body, reviewSchema);
   //Make sure the user is not trying to review the same business twice.
-  const [existingReview] = await mysqlPool.query(
-    "SELECT * FROM `Reviews` WHERE `userId`=? AND `businessId`=?;",
-    [validatedReview.userId, validatedReview.businessId]
-  );
-  if(existingReview[0]){
+  const db = getDBReference();
+  const existingReview = await db.collection("reviews").findOne({
+    userId: validatedReview.userId,
+    businessId: validatedReview.businessId
+  });
+  if(existingReview){
     return {error: 403};
   }
   
-  const [result] = await mysqlPool.query(
-    "INSERT INTO `Reviews` SET ?;",
-    validatedReview
-  );
-  return result.insertId;
+  const result = await db.collection("reviews").insertOne(validatedReview);
+  return result.insertedId;
 }
 
 
@@ -91,11 +90,11 @@ router.get('/:reviewID', async (req, res, next) => {
 });
 
 async function getReview(id){
-  const [results] = await mysqlPool.query(
-    "SELECT * FROM `Reviews` WHERE `id`=?;",
-    id
-  );
-  return results[0];
+  const db = getDBReference();
+  const results = await db.collection("reviews").findOne({
+    _id: new ObjectID(id)
+  });
+  return results;
 }
 
 
@@ -140,22 +139,22 @@ router.put('/:reviewID', async (req, res, next) => {
 
 async function updateReview(body, id){
   let validatedReview = validation.extractValidFields(body, reviewSchema);
-  const [curReview] = await mysqlPool.query(
-    "SELECT * FROM `Reviews` WHERE `id`=?;",
-    id
-  );
-  if(!curReview[0]){
+  const db = getDBReference();
+  const curReview = await db.collection("reviews").findOne({
+    _id: new ObjectID(id)
+  });
+  if(!curReview){
     return {error: 404};
   }
-  else if(!(curReview[0].userId == validatedReview.userId && curReview[0].businessId == validatedReview.businessId)){
+  else if(!(curReview.userId == validatedReview.userId && curReview.businessId == validatedReview.businessId)){
     return {error: 403};
   }
 
-  const [results] = await mysqlPool.query(
-    "UPDATE `Reviews` SET ? WHERE `id`=?;",
-    [validatedReview, id]
+  const results = await db.collection("reviews").replaceOne(
+    {_id: new ObjectID(id)},
+    validatedReview
   );
-  return results.affectedRows > 0;
+  return results.matchedCount > 0;
 }
 
 
@@ -175,9 +174,9 @@ router.delete('/:reviewID', async (req, res, next) => {
 });
 
 async function deleteReview(id){
-  const [results] = await mysqlPool.query(
-    "DELETE FROM `Reviews` WHERE `id` = ?;",
-    id
-  );
+  const db = getDBReference();
+  const results = await db.collection("reviews").deleteOne({
+    _id: new ObjectID(id)
+  });
   return results.affectedRows > 0;
 }

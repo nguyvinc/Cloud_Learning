@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const validation = require('../lib/validation');
-const mysqlPool = require("../lib/mysqlPool");
+const {getDBReference} = require("../lib/mongo");
+const ObjectID = require("mongodb").ObjectID;
 
 exports.router = router;
 
@@ -44,11 +45,9 @@ router.post('/', async (req, res, next) => {
 
 async function postPhoto(body){
   const photo = validation.extractValidFields(body, photoSchema);
-  const [result] = await mysqlPool.query(
-    "INSERT INTO `Photos` SET ?;",
-    photo
-  );
-  return [result.insertId, photo.businessId];
+  const db = getDBReference();
+  const result = await db.collection("photos").insertOne(photo);
+  return [result.insertedId, photo.businessId];
 }
 
 
@@ -74,11 +73,11 @@ router.get('/:photoID', async (req, res, next) => {
 });
 
 async function getPhoto(id){
-  const [results] = await mysqlPool.query(
-    "SELECT * FROM `Photos` WHERE `id`=?",
-    id
-  );
-  return results[0];
+  const db = getDBReference();
+  const result = await db.collection("photos").find({
+    _id: new ObjectID(id)
+  });
+  return result[0];
 }
 
 
@@ -123,24 +122,25 @@ router.put('/:photoID', async (req, res, next) => {
 
 async function updatePhoto(photo, id){
   const validatedPhoto = validation.extractValidFields(photo, photoSchema);
-  const [curPhoto] = await mysqlPool.query(
-    "SELECT * FROM `Photos` WHERE `id` = ?;", 
-    id
-  );
+  const photoId = new ObjectID(id);
+  const db = getDBReference();
+  const curPhoto = await db.collection("photos").findOne({
+    _id: photoId
+  });
 
-  if(!curPhoto[0]){
+  if(!curPhoto){
     return {error: 404};
   }
   //If the userId and businessId don't match, can't update
-  else if (!(curPhoto[0].userId == validatedPhoto.userId && curPhoto[0].businessId == validatedPhoto.businessId)){
+  else if (!(curPhoto.userId == validatedPhoto.userId && curPhoto.businessId == validatedPhoto.businessId)){
     return {error: 403}
   }
 
-  const [results] = await mysqlPool.query(
-    "UPDATE `Photos` SET ? WHERE `id`=?;",
-    [validatedPhoto, id]
+  const results = await db.collection("photos").replaceOne(
+    {_id: photoId},
+    validatedPhoto
   );
-  return results.affectedRows > 0;
+  return results.matchedCount > 0;
 }
 
 
@@ -151,7 +151,7 @@ async function updatePhoto(photo, id){
 router.delete('/:photoID', async (req, res, next) => {
   try{
     const photoId = parseInt(req.params.photoID);
-    const photo = await deletePhoto(photoId)
+    const photo = await deletePhoto(photoId);
     if (photo) {
       res.status(204).end();
     }
@@ -167,9 +167,9 @@ router.delete('/:photoID', async (req, res, next) => {
 });
 
 async function deletePhoto(id){
-  const [results] = await mysqlPool.query(
-    "DELETE FROM `Photos` WHERE `id` = ?",
-    id
-  );
-  return results.affectedRows > 0;
+  const db = getDBReference();
+  const results = await db.collection("photos").deleteOne({
+    _id: new ObjectID(id)
+  });
+  return results.deletedCount > 0;
 }
