@@ -1,5 +1,5 @@
 #!/bin/bash
 
-docker run -d --name mysql-server --network mysql-net -v "assignment2-mysql_yelp-volume:/var/lib/mysql" -e "MYSQL_RANDOM_ROOT_PASSWORD=yes" -e "MYSQL_DATABASE=miniYelp" -e "MYSQL_USER=test" -e "MYSQL_PASSWORD=test" mysql
-
-docker run --rm -it	--network mysql-net	mysql mysql -h mysql-server -u test -p
+docker run -d --name mongo-server --network mongo-net -p "27017:27017" -e "MONGO_INITDB_ROOT_USERNAME=root" -e "MONGO_INITDB_ROOT_PASSWORD=test1" mongo:latest
+#Need to wait for server to launch
+docker run --rm -it --network mongo-net mongo:latest mongo --host mongo-server --username root --password test1 --authenticationDatabase admin
