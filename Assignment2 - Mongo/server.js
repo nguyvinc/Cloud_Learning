@@ -1,6 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
-const {connectToDB} = require('../lib/mongo');
+const {connectToDB} = require('./lib/mongo');
 
 const api = require('./api');
 
