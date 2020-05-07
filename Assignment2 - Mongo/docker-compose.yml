@@ -2,6 +2,7 @@ version: "3.2"
 services:
     api:
         build: .
+        restart: always
         networks:
             - yelpnet
         ports:
@@ -15,6 +16,7 @@ services:
             - db
     db:
         image: mongo
+        restart: always
         volumes: 
             - type: volume
               source: a2mongo-volume
