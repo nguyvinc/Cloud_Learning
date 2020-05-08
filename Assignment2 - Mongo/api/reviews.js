@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const validation = require('../lib/validation');
-const {getDBReference} = require("../lib/mongo");
-const ObjectID = require("mongodb").ObjectID;
+const {getDBReference, getNextSequence} = require("../lib/mongo");
 
 exports.router = router;
 
@@ -51,7 +50,7 @@ router.post('/', async (req, res, next) => {
 });
 
 async function postReview(body){
-  const validatedReview = validation.extractValidFields(body, reviewSchema);
+  let validatedReview = validation.extractValidFields(body, reviewSchema);
   //Make sure the user is not trying to review the same business twice.
   const db = getDBReference();
   const existingReview = await db.collection("reviews").findOne({
@@ -61,6 +60,10 @@ async function postReview(body){
   if(existingReview){
     return {error: 403};
   }
+
+  //Get id after checking
+  const nextVal = await getNextSequence("reviewId");
+  validatedReview._id = nextVal;
   
   const result = await db.collection("reviews").insertOne(validatedReview);
   return result.insertedId;
@@ -92,7 +95,7 @@ router.get('/:reviewID', async (req, res, next) => {
 async function getReview(id){
   const db = getDBReference();
   const results = await db.collection("reviews").findOne({
-    _id: new ObjectID(id)
+    _id: id
   });
   return results;
 }
@@ -141,7 +144,7 @@ async function updateReview(body, id){
   let validatedReview = validation.extractValidFields(body, reviewSchema);
   const db = getDBReference();
   const curReview = await db.collection("reviews").findOne({
-    _id: new ObjectID(id)
+    _id: id
   });
   if(!curReview){
     return {error: 404};
@@ -151,7 +154,7 @@ async function updateReview(body, id){
   }
 
   const results = await db.collection("reviews").replaceOne(
-    {_id: new ObjectID(id)},
+    {_id: id},
     validatedReview
   );
   return results.matchedCount > 0;
@@ -176,7 +179,7 @@ router.delete('/:reviewID', async (req, res, next) => {
 async function deleteReview(id){
   const db = getDBReference();
   const results = await db.collection("reviews").deleteOne({
-    _id: new ObjectID(id)
+    _id: id
   });
-  return results.affectedRows > 0;
+  return results.deletedCount > 0;
 }

@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const validation = require('../lib/validation');
-const {getDBReference} = require('../lib/mongo');
-const ObjectID = require('mongodb').ObjectID;
+const {getDBReference, getNextSequence} = require('../lib/mongo');
 
 exports.router = router;
 
@@ -104,7 +103,10 @@ router.post('/', async (req, res, next) => {
 });
 
 async function postBusiness(business){
-  const validatedBusiness = validation.extractValidFields(business, businessSchema);
+  let validatedBusiness = validation.extractValidFields(business, businessSchema);
+  const nextVal = await getNextSequence("businessId");
+  validatedBusiness._id = nextVal;
+  
   const db = getDBReference();
   const collection = db.collection("businesses");
   const results = await collection.insertOne(validatedBusiness);
@@ -139,7 +141,7 @@ async function getSingleBusiness(id){
   const db = getDBReference();
   const business = await db.collection("businesses").aggregate([
     {
-      $match: {_id: new ObjectID(id)}
+      $match: {_id: id}
     },
     {
       $lookup: {
@@ -157,10 +159,10 @@ async function getSingleBusiness(id){
         as: "businessPhotos"
       }
     }
-  ]);
-
+  ]).toArray();
+  
   return {
-    business: business[0]
+    business: business
   };
 }
 
@@ -202,7 +204,7 @@ async function updateBusiness(body, id){
   const validatedBusiness = validation.extractValidFields(body, businessSchema);
   const collection = getDBReference().collection("businesses");
   const results = await collection.replaceOne(
-    {_id: new ObjectID(id)},
+    {_id: id},
     validatedBusiness
   );
   return results.matchedCount > 0;
@@ -234,7 +236,7 @@ router.delete('/:businessid', async (req, res, next) => {
 async function deleteBusiness(id){
   const collection = getDBReference().collection("businesses");
   const results = await collection.deleteOne({
-    _id: new ObjectID(id)
+    _id: id
   });
   return results.deletedCount > 0;
 }

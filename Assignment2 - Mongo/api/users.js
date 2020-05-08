@@ -25,7 +25,8 @@ async function getUserBusinesses(id){
   const db = getDBReference();
   const results = await db.collection("businesses").find({
     userId: id
-  });
+  }).toArray();
+  console.log("== Results:", results);
   return results;
 }
 
@@ -52,8 +53,8 @@ router.get('/:userid/reviews', async (req, res) => {
 async function getUserReviews(id){
   const db = getDBReference();
   const results = await db.collection("reviews").find({
-    userId: id
-  });
+    ownerId: id
+  }).toArray();
   return results;
 }
 
@@ -81,6 +82,6 @@ async function getUserPhotos(id){
   const db = getDBReference();
   const results = await db.collection("photos").find({
     userId: id
-  });
+  }).toArray();
   return results;
 }

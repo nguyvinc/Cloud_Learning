@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const validation = require('../lib/validation');
-const {getDBReference} = require("../lib/mongo");
-const ObjectID = require("mongodb").ObjectID;
+const {getDBReference, getNextSequence} = require("../lib/mongo");
 
 exports.router = router;
 
@@ -44,7 +43,10 @@ router.post('/', async (req, res, next) => {
 });
 
 async function postPhoto(body){
-  const photo = validation.extractValidFields(body, photoSchema);
+  let photo = validation.extractValidFields(body, photoSchema);
+  const nextVal = await getNextSequence("photoId");
+  photo._id = nextVal;
+
   const db = getDBReference();
   const result = await db.collection("photos").insertOne(photo);
   return [result.insertedId, photo.businessId];
@@ -74,10 +76,10 @@ router.get('/:photoID', async (req, res, next) => {
 
 async function getPhoto(id){
   const db = getDBReference();
-  const result = await db.collection("photos").find({
-    _id: new ObjectID(id)
+  const result = await db.collection("photos").findOne({
+    _id: id
   });
-  return result[0];
+  return result;
 }
 
 
@@ -122,10 +124,9 @@ router.put('/:photoID', async (req, res, next) => {
 
 async function updatePhoto(photo, id){
   const validatedPhoto = validation.extractValidFields(photo, photoSchema);
-  const photoId = new ObjectID(id);
   const db = getDBReference();
   const curPhoto = await db.collection("photos").findOne({
-    _id: photoId
+    _id: id
   });
 
   if(!curPhoto){
@@ -137,7 +138,7 @@ async function updatePhoto(photo, id){
   }
 
   const results = await db.collection("photos").replaceOne(
-    {_id: photoId},
+    {_id: id},
     validatedPhoto
   );
   return results.matchedCount > 0;
@@ -169,7 +170,7 @@ router.delete('/:photoID', async (req, res, next) => {
 async function deletePhoto(id){
   const db = getDBReference();
   const results = await db.collection("photos").deleteOne({
-    _id: new ObjectID(id)
+    _id: id
   });
   return results.deletedCount > 0;
 }
