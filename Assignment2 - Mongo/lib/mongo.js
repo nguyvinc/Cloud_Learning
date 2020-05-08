@@ -23,3 +23,11 @@ exports.connectToDB = function(callback){
 exports.getDBReference = function(){
     return db;
 };
+
+exports.getNextSequence = async function(name){
+    let ret = await db.collection("counters").findOneAndUpdate(
+        {_id: name},
+        {$inc: {value: 1}},
+    );
+    return ret.value.value;
+}
