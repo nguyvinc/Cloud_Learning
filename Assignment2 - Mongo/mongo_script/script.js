@@ -7,6 +7,22 @@ db.createUser({
 db.createCollection("businesses");
 db.createCollection("photos");
 db.createCollection("reviews");
+db.createCollection("counters");
+
+db.counters.insertMany([
+  {
+    "_id": "businessId",
+    "value": 19
+  },
+  {
+    "_id": "photoId",
+    "value": 10
+  },
+  {
+    "_id": "reviewId",
+    "value": 10
+  }
+]);
 
 db.businesses.insertMany([
   {
