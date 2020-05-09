@@ -4,7 +4,7 @@ const { getBusinessesByOwnerId } = require('../models/business');
 const { getReviewsByUserId } = require('../models/review');
 const { getPhotosByUserId } = require('../models/photo');
 const {validateAgainstSchema} = require("../lib/validation");
-const {UserSchema, insertNewUser} = require("../models/users");
+const {UserSchema, LoginSchema, insertNewUser, loginUser} = require("../models/users");
 
 /*
  * Route to list all of a user's businesses.
@@ -89,6 +89,37 @@ router.post("/", async (req, res, next) => {
   else{
     res.status(400).send({
       error: "Request body is not a valid user object."
+    });
+  }
+});
+
+// Route to login a user
+router.post("/login", async (req, res, next) => {
+  //Send email and password in body, if valid, respond with JWT, JWT payload should contain userID, expire in 24h
+  if(validateAgainstSchema(req.body, LoginSchema)){
+    try{
+      const token = await loginUser(req.body);
+      if(!token){  //If no user was found with credentials, return an error
+        res.status(401).send({
+          error: "Invalid username or password."
+        });
+      }
+      else{ //If user was authenticated and a token was returned
+        res.status(200).send({
+          token: token
+        });
+      }
+    }
+    catch(err){
+      console.error(err);
+      res.status(500).send({
+        error: "Error logging in. Please try again later."
+      });
+    }
+  }
+  else{
+    res.status(400).send({
+      error: "Please enter an email and password."
     });
   }
 });
