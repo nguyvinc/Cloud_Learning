@@ -5,6 +5,10 @@
 const mysqlPool = require("../lib/mysqlPool");
 const {extractValidFields} = require("../lib/validation");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+const secretKey = "yupperino";
+
 
 // Schema describing required/optional fields of a user object
 const UserSchema = {
@@ -14,6 +18,12 @@ const UserSchema = {
     admin: {required: false}
 };
 exports.UserSchema = UserSchema;
+
+const LoginSchema = {
+    email: {required: true},
+    password: {required: true}
+};
+exports.LoginSchema = LoginSchema;
 
 
 async function insertNewUser(userInfo){
@@ -44,3 +54,46 @@ async function insertNewUser(userInfo){
     return result.insertId;
 }
 exports.insertNewUser = insertNewUser;
+
+
+async function loginUser(info){
+    const login = await getUser({email: info.email}, true);
+    if(!(login && await bcrypt.compare(info.password, login.password))){    //If no user or passwords don't match, return an error
+        return false;
+    }
+    else{   //Else if user exists and passwords match
+        //Create a payload with the user's id
+        const payload = {sub: login.id};
+
+        //Return a JSON Web Token
+        return jwt.sign(payload, secretKey, {expiresIn: "24h"});
+    }
+}
+exports.loginUser = loginUser;
+
+
+async function getUser(info, getPass){
+    let query, data;
+    if(getPass){    //Get all fields
+        query = "SELECT * FROM `users` WHERE ";
+    }
+    else{           //Get all fields except password
+        query = "SELECT `id`, `name`, `email`, `admin` FROM `users` WHERE ";
+    }
+
+    if(info.id){    //If id was passed in, grab data by id
+        query += "`id`=?";
+        data = info.id;
+    }
+    else{           //If email was passed in, grab by email
+        query += "`email`=?";
+        data = info.email;
+    }
+    
+    const [user] = await mysqlPool.query(
+        query,
+        data
+    );
+    return user[0];
+}
+exports.getUser = getUser;
