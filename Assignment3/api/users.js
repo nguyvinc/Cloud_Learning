@@ -4,7 +4,7 @@ const { getBusinessesByOwnerId } = require('../models/business');
 const { getReviewsByUserId } = require('../models/review');
 const { getPhotosByUserId } = require('../models/photo');
 const {validateAgainstSchema} = require("../lib/validation");
-const {UserSchema, LoginSchema, insertNewUser, loginUser} = require("../models/users");
+const {UserSchema, LoginSchema, insertNewUser, loginUser, getUser} = require("../models/users");
 
 /*
  * Route to list all of a user's businesses.
@@ -120,6 +120,27 @@ router.post("/login", async (req, res, next) => {
   else{
     res.status(400).send({
       error: "Please enter an email and password."
+    });
+  }
+});
+
+// Route to grab user info
+router.get("/:userID", async(req, res, next) => {
+  try{
+    const userId = parseInt(req.params.userID);
+    const user = await getUser({id: userId}, false);
+    if(user){ //If a user was found, send user data
+      res.status(200).send({
+        user: user
+      });
+    }
+    else{   //Else the user doesn't exist
+      next();
+    }
+  }
+  catch(err){
+    res.status(500).send({
+      error: "Error fetching user data. Please try again later."
     });
   }
 });
