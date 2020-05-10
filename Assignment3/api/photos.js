@@ -12,22 +12,31 @@ const {
   replacePhotoById,
   deletePhotoById
 } = require('../models/photo');
+const {requireAuthentication} = require("../models/users");
 
 /*
  * Route to create a new photo.
  */
-router.post('/', async (req, res) => {
+router.post('/', requireAuthentication, async (req, res) => {
   if (validateAgainstSchema(req.body, PhotoSchema)) {
     try {
-      const id = await insertNewPhoto(req.body);
-      res.status(201).send({
-        id: id,
-        links: {
-          photo: `/photos/${id}`,
-          business: `/businesses/${req.body.businessid}`
-        }
-      });
-    } catch (err) {
+      const id = await insertNewPhoto(req.body, req.user, req.admin);
+      if(id){
+        res.status(201).send({
+          id: id,
+          links: {
+            photo: `/photos/${id}`,
+            business: `/businesses/${req.body.businessid}`
+          }
+        });
+      }
+      else{
+        res.status(400).send({
+          error: "Unable to post photo."
+        });
+      }
+    }
+    catch (err) {
       console.error(err);
       res.status(500).send({
         error: "Error inserting photo into DB.  Please try again later."
@@ -62,30 +71,38 @@ router.get('/:id', async (req, res, next) => {
 /*
  * Route to update a photo.
  */
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', requireAuthentication, async (req, res, next) => {
   if (validateAgainstSchema(req.body, PhotoSchema)) {
     try {
-      /*
-       * Make sure the updated photo has the same businessID and userID as
-       * the existing photo.  If it doesn't, respond with a 403 error.  If the
-       * photo doesn't already exist, respond with a 404 error.
-       */
+      //Make sure the photo exists
       const id = parseInt(req.params.id);
       const existingPhoto = await getPhotoById(id);
-      if (existingPhoto) {
+      if (existingPhoto) { 
+        /*
+         * Make sure the updated photo has the same businessID and userID as
+         * the existing photo.  If it doesn't, respond with a 403 error.  If the
+         * photo doesn't already exist, respond with a 404 error.
+         */
         if (req.body.businessid === existingPhoto.businessid && req.body.userid === existingPhoto.userid) {
-          const updateSuccessful = await replacePhotoById(id, req.body);
-          if (updateSuccessful) {
+          const updateSuccessful = await replacePhotoById(id, req.body, req.user, req.admin);
+          if(updateSuccessful.error){
+            res.status(401).send({
+              error: "User is not authorized to update the selected photo."
+            });
+          }
+          else if (updateSuccessful) {
             res.status(200).send({
               links: {
                 business: `/businesses/${req.body.businessid}`,
                 photo: `/photos/${id}`
               }
             });
-          } else {
+          } 
+          else {
             next();
           }
-        } else {
+        } 
+        else {
           res.status(403).send({
             error: "Updated photo must have the same businessID and userID"
           });
@@ -109,10 +126,15 @@ router.put('/:id', async (req, res, next) => {
 /*
  * Route to delete a photo.
  */
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireAuthentication, async (req, res, next) => {
   try {
-    const deleteSuccessful = await deletePhotoById(parseInt(req.params.id));
-    if (deleteSuccessful) {
+    const deleteSuccessful = await deletePhotoById(parseInt(req.params.id), req.user, req.admin);
+    if(deleteSuccessful.error){
+      res.status(401).send({
+        error: "User is not authorized to delete the selected photo."
+      });
+    }
+    else if (deleteSuccessful) {
       res.status(204).end();
     } else {
       next();

@@ -72,8 +72,12 @@ exports.getBusinessesPage = getBusinessesPage;
  * Executes a MySQL query to insert a new business into the database.  Returns
  * a Promise that resolves to the ID of the newly-created business entry.
  */
-async function insertNewBusiness(business) {
+async function insertNewBusiness(business, userId, admin) {
   business = extractValidFields(business, BusinessSchema);
+  if(business.ownerid != userId && (!admin)){
+    return null;
+  }
+
   const [ result ] = await mysqlPool.query(
     'INSERT INTO businesses SET ?',
     business
@@ -124,8 +128,11 @@ exports.getBusinessDetailsById = getBusinessDetailsById;
  * Returns a Promise that resolves to true if the business specified by
  * `id` existed and was successfully updated or to false otherwise.
  */
-async function replaceBusinessById(id, business) {
+async function replaceBusinessById(id, business, userId, admin) {
   business = extractValidFields(business, BusinessSchema);
+  if(business.ownerid != userId && (!admin)){
+    return {error: true};
+  }
   const [ result ] = await mysqlPool.query(
     'UPDATE businesses SET ? WHERE id = ?',
     [ business, id ]
@@ -139,7 +146,11 @@ exports.replaceBusinessById = replaceBusinessById;
  * a Promise that resolves to true if the business specified by `id` existed
  * and was successfully deleted or to false otherwise.
  */
-async function deleteBusinessById(id) {
+async function deleteBusinessById(id, userId, admin) {
+  const business = await getBusinessById(id);
+  if(business.ownerid != userId && (!admin)){
+    return {error: true};
+  }
   const [ result ] = await mysqlPool.query(
     'DELETE FROM businesses WHERE id = ?',
     [ id ]

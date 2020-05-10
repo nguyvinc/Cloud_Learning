@@ -19,8 +19,11 @@ exports.PhotoSchema = PhotoSchema;
  * Executes a MySQL query to insert a new photo into the database.  Returns
  * a Promise that resolves to the ID of the newly-created photo entry.
  */
-async function insertNewPhoto(photo) {
+async function insertNewPhoto(photo, userId, admin) {
   photo = extractValidFields(photo, PhotoSchema);
+  if(photo.userid != userId && (!admin)){
+    return null;
+  }
   const [ result ] = await mysqlPool.query(
     'INSERT INTO photos SET ?',
     photo
@@ -49,8 +52,11 @@ exports.getPhotoById = getPhotoById;
  * Returns a Promise that resolves to true if the photo specified by
  * `id` existed and was successfully updated or to false otherwise.
  */
-async function replacePhotoById(id, photo) {
+async function replacePhotoById(id, photo, userId, admin) {
   photo = extractValidFields(photo, PhotoSchema);
+  if(photo.userid != userId && (!admin)){
+    return {error: true};
+  }
   const [ result ] = await mysqlPool.query(
     'UPDATE photos SET ? WHERE id = ?',
     [ photo, id ]
@@ -64,7 +70,11 @@ exports.replacePhotoById = replacePhotoById;
  * a Promise that resolves to true if the photo specified by `id`
  * existed and was successfully deleted or to false otherwise.
  */
-async function deletePhotoById(id) {
+async function deletePhotoById(id, userId, admin) {
+  const photo = await getPhotoById(id);
+  if(photo.userid != userId && (!admin)){
+    return {error: true};
+  }
   const [ result ] = await mysqlPool.query(
     'DELETE FROM photos WHERE id = ?',
     [ id ]

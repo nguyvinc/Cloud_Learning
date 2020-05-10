@@ -13,11 +13,12 @@ const {
   replaceReviewById,
   deleteReviewById
 } = require('../models/review');
+const {requireAuthentication} = require("../models/users");
 
 /*
  * Route to create a new review.
  */
-router.post('/', async (req, res) => {
+router.post('/', requireAuthentication, async (req, res) => {
   if (validateAgainstSchema(req.body, ReviewSchema)) {
     try {
       /*
@@ -29,15 +30,23 @@ router.post('/', async (req, res) => {
         res.status(403).send({
           error: "User has already posted a review of this business"
         });
-      } else {
-        const id = await insertNewReview(req.body);
-        res.status(201).send({
-          id: id,
-          links: {
-            review: `/reviews/${id}`,
-            business: `/businesses/${req.body.businessid}`
-          }
-        });
+      } 
+      else {
+        const id = await insertNewReview(req.body, req.user, req.admin);
+        if(id){
+          res.status(201).send({
+            id: id,
+            links: {
+              review: `/reviews/${id}`,
+              business: `/businesses/${req.body.businessid}`
+            }
+          });
+        }
+        else{
+          res.status(400).send({
+            error: "Unable to post review."
+          });
+        }
       }
     } catch (err) {
       console.error(err);
@@ -74,20 +83,25 @@ router.get('/:id', async (req, res, next) => {
 /*
  * Route to update a review.
  */
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', requireAuthentication, async (req, res, next) => {
   if (validateAgainstSchema(req.body, ReviewSchema)) {
     try {
-      /*
-       * Make sure the updated review has the same businessID and userID as
-       * the existing review.  If it doesn't, respond with a 403 error.  If the
-       * review doesn't already exist, respond with a 404 error.
-       */
       const id = parseInt(req.params.id);
       const existingReview = await getReviewById(id);
       if (existingReview) {
+        /*
+         * Make sure the updated review has the same businessID and userID as
+         * the existing review.  If it doesn't, respond with a 403 error.  If the
+         * review doesn't already exist, respond with a 404 error.
+         */
         if (req.body.businessid === existingReview.businessid && req.body.userid === existingReview.userid) {
-          const updateSuccessful = await replaceReviewById(id, req.body);
-          if (updateSuccessful) {
+          const updateSuccessful = await replaceReviewById(id, req.body, req.user, req.admin);
+          if(updateSuccessful.error){
+            res.status(401).send({
+              error: "User is not authorized to update the selected review."
+            });
+          }
+          else if (updateSuccessful) {
             res.status(200).send({
               links: {
                 business: `/businesses/${req.body.businessid}`,
@@ -121,10 +135,15 @@ router.put('/:id', async (req, res, next) => {
 /*
  * Route to delete a review.
  */
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireAuthentication, async (req, res, next) => {
   try {
-    const deleteSuccessful = await deleteReviewById(parseInt(req.params.id));
-    if (deleteSuccessful) {
+    const deleteSuccessful = await deleteReviewById(parseInt(req.params.id), req.user, req.admin);
+    if(deleteSuccessful.error){
+      res.status(401).send({
+        error: "User is not authorized to delete the selected review."
+      });
+    }
+    else if (deleteSuccessful) {
       res.status(204).end();
     } else {
       next();

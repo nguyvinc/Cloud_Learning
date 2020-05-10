@@ -37,8 +37,11 @@ exports.hasUserReviewedBusiness = hasUserReviewedBusiness;
  * Executes a MySQL query to insert a new review into the database.  Returns
  * a Promise that resolves to the ID of the newly-created review entry.
  */
-async function insertNewReview(review) {
+async function insertNewReview(review, userId, admin) {
   review = extractValidFields(review, ReviewSchema);
+  if(review.userid != userId && (!admin)){
+    return null;
+  }
   const [ result ] = await mysqlPool.query(
     'INSERT INTO reviews SET ?',
     review
@@ -67,8 +70,11 @@ exports.getReviewById = getReviewById;
  * Returns a Promise that resolves to true if the review specified by
  * `id` existed and was successfully updated or to false otherwise.
  */
-async function replaceReviewById(id, review) {
+async function replaceReviewById(id, review, userId, admin) {
   review = extractValidFields(review, ReviewSchema);
+  if(review.userid != userId && (!admin)){
+    return {error: true};
+  }
   const [ result ] = await mysqlPool.query(
     'UPDATE reviews SET ? WHERE id = ?',
     [ review, id ]
@@ -82,7 +88,11 @@ exports.replaceReviewById = replaceReviewById;
  * a Promise that resolves to true if the review specified by `id`
  * existed and was successfully deleted or to false otherwise.
  */
-async function deleteReviewById(id) {
+async function deleteReviewById(id, userId, admin) {
+  const review = await getReviewById(id);
+  if(review.userid != userId && (!admin)){
+    return {error: true};
+  }
   const [ result ] = await mysqlPool.query(
     'DELETE FROM reviews WHERE id = ?',
     [ id ]
