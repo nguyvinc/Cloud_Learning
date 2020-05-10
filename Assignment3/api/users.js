@@ -4,18 +4,28 @@ const { getBusinessesByOwnerId } = require('../models/business');
 const { getReviewsByUserId } = require('../models/review');
 const { getPhotosByUserId } = require('../models/photo');
 const {validateAgainstSchema} = require("../lib/validation");
-const {UserSchema, LoginSchema, insertNewUser, loginUser, getUser} = require("../models/users");
+const {UserSchema, LoginSchema, insertNewUser, loginUser, getUser, requireAuthentication} = require("../models/users");
 
 /*
  * Route to list all of a user's businesses.
  */
-router.get('/:id/businesses', async (req, res, next) => {
+router.get('/:id/businesses', requireAuthentication, async (req, res, next) => {
   try {
-    const businesses = await getBusinessesByOwnerId(parseInt(req.params.id));
-    if (businesses) {
-      res.status(200).send({ businesses: businesses });
-    } else {
-      next();
+    const userId = parseInt(req.params.id);
+    const tokenId = parseInt(req.user);
+    if(userId !== tokenId && (!req.admin)){
+      res.status(403).send({
+        error: "Unauthorized access to the specified resource."
+      });
+    }
+    else{
+      const businesses = await getBusinessesByOwnerId(parseInt(req.params.id));
+      if (businesses) {
+        res.status(200).send({ businesses: businesses });
+      }
+      else {
+        next();
+      }
     }
   } catch (err) {
     console.error(err);
@@ -28,13 +38,23 @@ router.get('/:id/businesses', async (req, res, next) => {
 /*
  * Route to list all of a user's reviews.
  */
-router.get('/:id/reviews', async (req, res, next) => {
+router.get('/:id/reviews', requireAuthentication, async (req, res, next) => {
   try {
-    const reviews = await getReviewsByUserId(parseInt(req.params.id));
-    if (reviews) {
-      res.status(200).send({ reviews: reviews });
-    } else {
-      next();
+    const userId = parseInt(req.params.id);
+    const tokenId = parseInt(req.user);
+    if(userId !== tokenId && (!req.admin)){
+      res.status(403).send({
+        error: "Unauthorized access to the specified resource."
+      });
+    }
+    else{
+      const reviews = await getReviewsByUserId(parseInt(req.params.id));
+      if (reviews) {
+        res.status(200).send({ reviews: reviews });
+      }
+      else {
+        next();
+      }
     }
   } catch (err) {
     console.error(err);
@@ -47,13 +67,23 @@ router.get('/:id/reviews', async (req, res, next) => {
 /*
  * Route to list all of a user's photos.
  */
-router.get('/:id/photos', async (req, res, next) => {
+router.get('/:id/photos', requireAuthentication, async (req, res, next) => {
   try {
-    const photos = await getPhotosByUserId(parseInt(req.params.id));
-    if (photos) {
-      res.status(200).send({ photos: photos });
-    } else {
-      next();
+    const userId = parseInt(req.params.id);
+    const tokenId = parseInt(req.user);
+    if(userId !== tokenId && (!req.admin)){
+      res.status(403).send({
+        error: "Unauthorized access to the specified resource."
+      });
+    }
+    else{
+      const photos = await getPhotosByUserId(parseInt(req.params.id));
+      if (photos) {
+        res.status(200).send({ photos: photos });
+      }
+      else {
+        next();
+      }
     }
   } catch (err) {
     console.error(err);
@@ -125,17 +155,25 @@ router.post("/login", async (req, res, next) => {
 });
 
 // Route to grab user info
-router.get("/:userID", async(req, res, next) => {
+router.get("/:userID", requireAuthentication, async(req, res, next) => {
   try{
     const userId = parseInt(req.params.userID);
-    const user = await getUser({id: userId}, false);
-    if(user){ //If a user was found, send user data
-      res.status(200).send({
-        user: user
+    const tokenId = parseInt(req.user);
+    if(userId !== tokenId && (!req.admin)){
+      res.status(403).send({
+        error: "Unauthorized access to the specified resource."
       });
     }
-    else{   //Else the user doesn't exist
-      next();
+    else{
+      const user = await getUser({id: userId}, false);
+      if(user){ //If a user was found, send user data
+        res.status(200).send({
+          user: user
+        });
+      }
+      else{   //Else the user doesn't exist
+        next();
+      }
     }
   }
   catch(err){

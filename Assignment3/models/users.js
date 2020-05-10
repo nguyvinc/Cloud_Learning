@@ -63,7 +63,7 @@ async function loginUser(info){
     }
     else{   //Else if user exists and passwords match
         //Create a payload with the user's id
-        const payload = {sub: login.id};
+        const payload = {sub: login.id, admin: login.admin};
 
         //Return a JSON Web Token
         return jwt.sign(payload, secretKey, {expiresIn: "24h"});
@@ -106,6 +106,7 @@ function requireAuthentication(req, res, next){
     try{
         const payload = jwt.verify(token, secretKey);
         req.user = payload.sub;
+        req.admin = payload.admin;
         next();
     }
     catch(err){
