@@ -116,3 +116,18 @@ function requireAuthentication(req, res, next){
     }
 }
 exports.requireAuthentication = requireAuthentication;
+
+function checkAuthentication(authorization){
+    const authHeader = authorization || "";
+    const authHeaderParts = authHeader.split(" ");
+
+    const token = authHeaderParts[0] === "Bearer" ? authHeaderParts[1] : null;
+    try{
+        const payload = jwt.verify(token, secretKey);
+        return payload.sub;
+    }
+    catch(err){
+        return false;
+    }
+}
+exports.checkAuthentication = checkAuthentication;
