@@ -28,6 +28,17 @@ app.use('*', function (req, res, next) {
   });
 });
 
+//Default error handler middleware
+app.use("*", function(err, req, res, next){
+  console.error(err);
+  res.status(500).send({
+    error: "An error occurred. Try again later."
+  });
+});
+
+//Make images in upload directory available for download
+app.use("/media/images", express.static(`${__dirname}/uploads`));
+
 connectToDB(() => {
   app.listen(port, () => {
     console.log("== Server is running on port", port);

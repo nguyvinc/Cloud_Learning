@@ -3,6 +3,29 @@
  */
 
 const router = require('express').Router();
+const multer = require("multer");
+const crypto = require("crypto");
+
+//Store uploaded files in system disk storage in upload directory
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: `${__dirname}/uploads`,
+    filename: (req, file, callback) => {
+      const filename = crypto.pseudoRandomBytes(16).toString("hex");
+      const extension = imageTypes[file.mimetype];
+      callback(null, `${filename}.${extension}`);
+    }
+  }),
+  fileFilter: (req, file, callback) => {
+    callback(null, !!imageTypes[file.mimetype]);
+  }
+});
+
+//Supported uploaded image types
+const imageTypes = {
+  "image/jpeg": "jpg",
+  "image/png": "png"
+};
 
 const { validateAgainstSchema } = require('../lib/validation');
 const {
@@ -13,11 +36,12 @@ const {
 
 /*
  * Route to create a new photo.
+ * upload.single("image") makes middleware expect multipart form-data
  */
-router.post('/', async (req, res) => {
-  if (validateAgainstSchema(req.body, PhotoSchema)) {
+router.post('/', upload.single("image"), async (req, res) => {
+  if (validateAgainstSchema(req.body, PhotoSchema) && req.file) {
     try {
-      const id = await insertNewPhoto(req.body);
+      const id = await insertNewPhoto(req.body, req.file);
       res.status(201).send({
         id: id,
         links: {
@@ -45,6 +69,8 @@ router.get('/:id', async (req, res, next) => {
   try {
     const photo = await getPhotoById(req.params.id);
     if (photo) {
+      delete photo.path;
+      photo.url = `/media/images/${image.filename}`;
       res.status(200).send(photo);
     } else {
       next();

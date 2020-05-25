@@ -20,9 +20,14 @@ exports.PhotoSchema = PhotoSchema;
  * Executes a DB query to insert a new photo into the database.  Returns
  * a Promise that resolves to the ID of the newly-created photo entry.
  */
-async function insertNewPhoto(photo) {
+async function insertNewPhoto(photo, file) {
   photo = extractValidFields(photo, PhotoSchema);
   photo.businessid = ObjectId(photo.businessid);
+
+  photo.contentType = file.mimetype;
+  photo.filename = file.filename;
+  photo.path = file.path;
+
   const db = getDBReference();
   const collection = db.collection('photos');
   const result = await collection.insertOne(photo);
