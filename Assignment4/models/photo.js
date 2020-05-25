@@ -69,7 +69,7 @@ async function getPhotosByBusinessId(id) {
     return [];
   } else {
     const results = await collection
-      .find({ businessid: new ObjectId(id) })
+      .find({ businessid: id })
       .toArray();
     return results;
   }
