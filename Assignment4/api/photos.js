@@ -30,7 +30,8 @@ const imageTypes = {
 const { validateAgainstSchema } = require('../lib/validation');
 const {
   PhotoSchema,
-  insertNewPhoto,
+  savePhotoFile,
+  removeUploadedPhoto,
   getPhotoById
 } = require('../models/photo');
 
@@ -41,7 +42,8 @@ const {
 router.post('/', upload.single("image"), async (req, res) => {
   if (validateAgainstSchema(req.body, PhotoSchema) && req.file) {
     try {
-      const id = await insertNewPhoto(req.body, req.file);
+      const id = await savePhotoFile(req.body, req.file);
+      await removeUploadedPhoto(req.file);
       res.status(201).send({
         id: id,
         links: {
@@ -69,9 +71,14 @@ router.get('/:id', async (req, res, next) => {
   try {
     const photo = await getPhotoById(req.params.id);
     if (photo) {
-      delete photo.path;
-      photo.url = `/media/images/${photo.filename}`;
-      res.status(200).send(photo);
+      const responseBody = {
+        _id: photo._id,
+        url: `/media/images/${photo.filename}`,
+        contentType: photo.metadata.contentType,
+        businessid: photo.metadata.businessid,
+        caption: photo.metadata.caption
+      };
+      res.status(200).send(responseBody);
     } else {
       next();
     }

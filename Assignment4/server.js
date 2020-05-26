@@ -3,6 +3,7 @@ const morgan = require('morgan');
 
 const api = require('./api');
 const { connectToDB } = require('./lib/mongo');
+const {getImageDownloadStreamByFilename} = require("./models/photo");
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -22,6 +23,23 @@ app.use(express.static('public'));
  */
 app.use('/', api);
 
+//Make images in GridFS available for download
+app.get("/media/images/:filename", (req, res, next) => {
+  getImageDownloadStreamByFilename(req.params.filename)
+  .on("file", (file) => {
+    res.status(200).type(file.metadata.contentType);
+  })
+  .on("error", (err) => {
+    if(err.code === "ENOENT"){
+      next();
+    }
+    else{
+      next(err);
+    }
+  })
+  .pipe(res);
+});
+
 app.use('*', function (req, res, next) {
   res.status(404).json({
     error: "Requested resource " + req.originalUrl + " does not exist"
@@ -35,9 +53,6 @@ app.use("*", function(err, req, res, next){
     error: "An error occurred. Try again later."
   });
 });
-
-//Make images in upload directory available for download
-app.use("/media/images", express.static(`${__dirname}/uploads`));
 
 connectToDB(() => {
   app.listen(port, () => {
