@@ -35,6 +35,9 @@ const {
   getPhotoById
 } = require('../models/photo');
 
+const {getChannel} = require("../lib/rabbit");
+
+
 /*
  * Route to create a new photo.
  * upload.single("image") makes middleware expect multipart form-data
@@ -42,8 +45,15 @@ const {
 router.post('/', upload.single("image"), async (req, res) => {
   if (validateAgainstSchema(req.body, PhotoSchema) && req.file) {
     try {
+      //Save uploaded photo in GridFS
       const id = await savePhotoFile(req.body, req.file);
+      //Remove the photo off API machine's file system
       await removeUploadedPhoto(req.file);
+
+      //Send message to queue for workers to process
+      const channel = getChannel();
+      channel.sendToQueue("photos", Buffer.from(id.toString()));
+
       res.status(201).send({
         id: id,
         links: {
