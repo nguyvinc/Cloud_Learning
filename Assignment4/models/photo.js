@@ -20,7 +20,7 @@ exports.PhotoSchema = PhotoSchema;
 /*
  * Executes a DB query to insert a new photo into the database.  Returns
  * a Promise that resolves to the ID of the newly-created photo entry.
- */
+ *
 async function insertNewPhoto(photo, file) {
   photo = extractValidFields(photo, PhotoSchema);
   photo.businessid = ObjectId(photo.businessid);
@@ -35,6 +35,7 @@ async function insertNewPhoto(photo, file) {
   return result.insertedId;
 }
 exports.insertNewPhoto = insertNewPhoto;
+*/
 
 
 function savePhotoFile(photo, file){
@@ -120,7 +121,7 @@ async function updateOriginalPhotoById(id, sizes){
   else{
     const result = await collection.updateOne(
       {_id: id},
-      {$set: {"metadata.photoSizez": sizes}}
+      {$set: {"metadata.photoSizes": sizes}}
     );
     return result.matchedCount > 0;
   }
