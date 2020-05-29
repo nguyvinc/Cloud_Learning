@@ -87,10 +87,45 @@ exports.removeUploadedPhoto = removeUploadedPhoto;
 
 function getImageDownloadStreamByFilename(filename){
   const db = getDBReference();
+  //Create a bucket to interact with GridFS
   const bucket = new GridFSBucket(db, {bucketName: "photos"});
+  //Open a download stream using the filename
   return bucket.openDownloadStreamByName(filename);
 }
 exports.getImageDownloadStreamByFilename = getImageDownloadStreamByFilename;
+
+
+function getImageDownloadStreamById(id){
+  const db = getDBReference();
+  //Create a bucket to interact with GridFS
+  const bucket = new GridFSBucket(db, {bucketName: "photos"});
+  //Check if the passed in id is a valid ObjectId
+  if(!ObjectId.isValid(id)){
+    return null;
+  }
+  else{
+    //Open a download stream using the photo's id
+    return bucket.openUploadStream(id);
+  }
+}
+exports.getImageDownloadStreamById = getImageDownloadStreamById;
+
+
+async function updateOriginalPhotoById(id, sizes){
+  const db = getDBReference();
+  const collection = db.collection("photos.files");
+  if(!ObjectId.isValid(id)){
+    return null;
+  }
+  else{
+    const result = await collection.updateOne(
+      {_id: id},
+      {$set: {"metadata.photoSizez": sizes}}
+    );
+    return result.matchedCount > 0;
+  }
+}
+exports.updateOriginalPhotoById = updateOriginalPhotoById;
 
 
 /*
