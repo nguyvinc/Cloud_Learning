@@ -3,6 +3,7 @@ const morgan = require('morgan');
 
 const api = require('./api');
 const { connectToDB } = require('./lib/mongo');
+const {connectToRabbit} = require("./lib/rabbit");
 const {getImageDownloadStreamByFilename} = require("./models/photo");
 
 const app = express();
@@ -54,7 +55,9 @@ app.use("*", function(err, req, res, next){
   });
 });
 
-connectToDB(() => {
+connectToDB(async () => {
+  //Connect to RabbitMQ server
+  await connectToRabbit("photos");
   app.listen(port, () => {
     console.log("== Server is running on port", port);
   });
