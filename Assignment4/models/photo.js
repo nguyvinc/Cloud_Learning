@@ -97,16 +97,20 @@ exports.getImageDownloadStreamByFilename = getImageDownloadStreamByFilename;
 
 
 function getImageDownloadStreamById(id){
+  console.log("Attempting to get image download stream by id");
   const db = getDBReference();
   //Create a bucket to interact with GridFS
   const bucket = new GridFSBucket(db, {bucketName: "photos"});
+  console.log("Bucket created");
   //Check if the passed in id is a valid ObjectId
   if(!ObjectId.isValid(id)){
+    console.log("Id not valid");
     return null;
   }
   else{
+    console.log("Download stream successfully grabbed");
     //Open a download stream using the photo's id
-    return bucket.openUploadStream(id);
+    return bucket.openDownloadStream(id);
   }
 }
 exports.getImageDownloadStreamById = getImageDownloadStreamById;
