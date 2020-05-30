@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#docker stop api-server
+#docker rm api-server
+
+docker stop consumer-server
+docker rm consumer-server
