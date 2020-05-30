@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Builds api server using Dockerfile
-#docker build -f Dockerfile -t a4-api-server .
+docker build -f Dockerfile -t a4-api-server .
 
 #Builds consumer server using Dockerfile-resizer
 docker build -f Dockerfile-resizer -t a4-consumer .
