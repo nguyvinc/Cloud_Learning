@@ -44,6 +44,7 @@ connectToDB(async() => {
 
     //Consume upload message
     channel.consume("photos", msg => {
+        console.log("Processing uploaded image");
         //Grab id of uploaded photo
         const id = msg.content.toString();
         const imageChunks = [];
@@ -80,6 +81,7 @@ connectToDB(async() => {
                 }
                 //Update the original photo, storing the id's of all the resized images
                 await updateOriginalPhotoById(id, newPhotoSizes);
+                console.log("Processing complete");
             });
         channel.ack(msg);
     });

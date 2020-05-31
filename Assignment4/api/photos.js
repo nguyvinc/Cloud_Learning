@@ -47,20 +47,22 @@ router.post('/', upload.single("image"), async (req, res) => {
     try {
       //Save uploaded photo in GridFS
       const id = await savePhotoFile(req.body, req.file);
-      //Remove the photo off API machine's file system
-      await removeUploadedPhoto(req.file);
+      if(id){ //After the photo is saved
+        //Remove the photo off API machine's file system
+        await removeUploadedPhoto(req.file);
 
-      //Send message to queue for workers to process
-      const channel = getChannel();
-      channel.sendToQueue("photos", Buffer.from(id.toString()));
+        //Send message to queue for workers to process the uploaded photo
+        const channel = getChannel();
+        channel.sendToQueue("photos", Buffer.from(id.toString()));
 
-      res.status(201).send({
-        id: id,
-        links: {
-          photo: `/photos/${id}`,
-          business: `/businesses/${req.body.businessid}`
-        }
-      });
+        res.status(201).send({
+          id: id,
+          links: {
+            photo: `/photos/${id}`,
+            business: `/businesses/${req.body.businessid}`
+          }
+        });
+      }
     } catch (err) {
       console.error(err);
       res.status(500).send({
@@ -81,14 +83,23 @@ router.get('/:id', async (req, res, next) => {
   try {
     const photo = await getPhotoById(req.params.id);
     if (photo) {
-      const responseBody = {
+      console.log(photo);
+      const urls = {};
+      Object.keys(photo.metadata.photoSizes).forEach((size) => {
+        urls[size] = `/media/images/${req.params.id}-${size}.${imageTypes[photo.metadata.contentType]}`;
+      });
+      photo.url = urls;
+      //photo.url = `/media/images/${photo.filename}`;
+      /*const responseBody = {
         _id: photo._id,
         url: `/media/images/${photo.filename}`,
         contentType: photo.metadata.contentType,
         businessid: photo.metadata.businessid,
-        caption: photo.metadata.caption
-      };
-      res.status(200).send(responseBody);
+        caption: photo.metadata.caption,
+        variants: photo.metadata.photoSizes
+      };*/
+      delete photo.path;
+      res.status(200).send(photo);
     } else {
       next();
     }

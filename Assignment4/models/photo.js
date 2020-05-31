@@ -96,7 +96,7 @@ function getImageDownloadStreamByFilename(filename){
 exports.getImageDownloadStreamByFilename = getImageDownloadStreamByFilename;
 
 
-function getImageDownloadStreamById(id){
+/*function getImageDownloadStreamById(id){
   const db = getDBReference();
   //Create a bucket to interact with GridFS
   const bucket = new GridFSBucket(db, {bucketName: "photos"});
@@ -106,10 +106,37 @@ function getImageDownloadStreamById(id){
   }
   else{
     //Open a download stream using the photo's id
-    return bucket.openDownloadStream(id);
+    return bucket.openDownloadStream(new ObjectId(id));
   }
 }
-exports.getImageDownloadStreamById = getImageDownloadStreamById;
+exports.getImageDownloadStreamById = getImageDownloadStreamById;*/
+
+
+async function getImageDownloadStreamByIdAndSize(id, size){
+  //Check if passed in id is a valid ObjectId
+  if(!ObjectId.isValid(id)){
+    return null;
+  }
+  //Get the original photo
+  const photo = await getPhotoById(id);
+
+  //Grab the id of the desired photo size
+  const actualId = photo.metadata.photoSizes[size];
+  console.log(actualId);
+  //Check if the actualId is a valid ObjectId
+  if(!ObjectId.isValid(actualId)){
+    return null;
+  }
+  else{
+    const db = getDBReference();
+    //Create a bucket to interact with GridFS
+    const bucket = new GridFSBucket(db, {bucketName: "photos"});
+
+    //Open a download stream using the actualId
+    return bucket.openDownloadStream(new ObjectId(actualId));
+  }
+}
+exports.getImageDownloadStreamByIdAndSize = getImageDownloadStreamByIdAndSize;
 
 
 async function updateOriginalPhotoById(id, sizes){
@@ -120,7 +147,7 @@ async function updateOriginalPhotoById(id, sizes){
   }
   else{
     const result = await collection.updateOne(
-      {_id: id},
+      {_id: new ObjectId(id)},
       {$set: {"metadata.photoSizes": sizes}}
     );
     return result.matchedCount > 0;
@@ -148,7 +175,7 @@ async function getPhotoById(id) {
     /*const results = await collection
       .find({ _id: new ObjectId(id) })
       .toArray();*/
-    const results = await bucket.find({_id: ObjectId(id)}).toArray();
+    const results = await bucket.find({_id: new ObjectId(id)}).toArray();
     return results[0];
   }
 }

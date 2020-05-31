@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const api = require('./api');
 const { connectToDB } = require('./lib/mongo');
 const {connectToRabbit} = require("./lib/rabbit");
-const {getImageDownloadStreamByFilename} = require("./models/photo");
+const {getImageDownloadStreamByIdAndSize} = require("./models/photo");
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -25,20 +25,25 @@ app.use(express.static('public'));
 app.use('/', api);
 
 //Make images in GridFS available for download
-app.get("/media/images/:filename", (req, res, next) => {
-  getImageDownloadStreamByFilename(req.params.filename)
-  .on("file", (file) => {
-    res.status(200).type(file.metadata.contentType);
-  })
-  .on("error", (err) => {
-    if(err.code === "ENOENT"){
-      next();
-    }
-    else{
-      next(err);
-    }
-  })
-  .pipe(res);
+app.get("/media/images/:id-:size.jpg", async (req, res, next) => {
+  console.log("ID:", req.params.id, "\nSize:", req.params.size);
+  const stream = await getImageDownloadStreamByIdAndSize(req.params.id, req.params.size);
+  if(stream){
+    stream.on("file", (file) => {
+      console.log("File retrieved:", file);
+      const contentType = (file.metadata) ? file.metadata.contentType : "image/jpeg";
+      res.status(200).type(contentType);
+    })
+    .on("error", (err) => {
+      if(err.code === "ENOENT"){
+        next();
+      }
+      else{
+        next(err);
+      }
+    })
+    .pipe(res);
+  }
 });
 
 app.use('*', function (req, res, next) {
