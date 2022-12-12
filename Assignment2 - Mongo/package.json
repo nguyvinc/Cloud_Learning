@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/osu-cs493-sp20/master-assignment-2#readme",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "mongodb": "^3.5.7",
     "morgan": "^1.10.0"
   },
